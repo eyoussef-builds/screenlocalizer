@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "ScreenLocalizer — اشرح وترجم",
+  "short_name": "ScreenLocalizer",
+  "version": "1.1.0",
+  "description": "حدّد أي نص في الصفحة لتحصل فورًا على ترجمة أو شرح أو تبسيط أو تلخيص بالعربية. Select text to translate or explain it in Arabic.",
+  "homepage_url": "https://github.com/eyoussef-builds/screenlocalizer",
+  "permissions": [
+    "storage",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://api.openai.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ScreenLocalizer",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "commands": {
+    "open-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Translate/explain the current selection — ترجم أو اشرح النص المحدد"
+    }
+  }
+}

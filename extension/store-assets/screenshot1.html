@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body {
+    font: 16px/1.7 -apple-system, "Segoe UI", system-ui, sans-serif;
+    color: #1f2330; background: #fff;
+  }
+  .topbar {
+    height: 56px; border-bottom: 1px solid #ececf2;
+    display: flex; align-items: center; gap: 28px; padding: 0 48px;
+    font-size: 14px; color: #6b7080;
+  }
+  .brand { font-weight: 800; font-size: 17px; color: #1f2330; }
+  .article { max-width: 760px; padding: 40px 48px; }
+  .kicker { color: #6366f1; font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  h1 { font-size: 34px; line-height: 1.25; margin: 10px 0 6px; letter-spacing: -.02em; }
+  .meta { color: #9aa0b5; font-size: 13.5px; margin-bottom: 26px; }
+  p { margin-bottom: 16px; color: #3a3f50; }
+  .selected {
+    background: #c7d8fe; box-shadow: 0 0 0 2px #c7d8fe; border-radius: 2px;
+  }
+  /* ===== ScreenLocalizer UI (matches content.js styles) ===== */
+  .sl-panel {
+    position: fixed; right: 64px; top: 150px;
+    width: 430px;
+    display: flex; flex-direction: column;
+    background: #fff; color: #1f2330;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    box-shadow: 0 18px 60px rgba(20, 20, 60, .3);
+    font-size: 14px; line-height: 1.65;
+    overflow: hidden;
+  }
+  .sl-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 13px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+  }
+  .sl-logo { width: 19px; height: 19px; }
+  .sl-title { font-weight: 700; font-size: 14px; flex: 1; }
+  .sl-iconbtn {
+    background: rgba(255,255,255,.16); border: none; color: #fff;
+    width: 24px; height: 24px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .sl-modes { display: flex; gap: 6px; padding: 11px 13px 0; direction: rtl; }
+  .sl-chip {
+    border: 1px solid #d9dcf0; background: #f4f5fd; color: #4549b8;
+    padding: 6px 16px; border-radius: 999px; font-weight: 600; font-size: 13px;
+  }
+  .sl-chip.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: transparent; color: #fff; }
+  .sl-body { padding: 13px 15px; font-size: 15px; direction: rtl; text-align: right; }
+  .sl-body p { margin: 0 0 9px; color: #1f2330; }
+  .sl-body code {
+    background: #f0f1f7; border-radius: 4px; padding: 1px 6px;
+    font: 13px ui-monospace, Menlo, monospace; direction: ltr; unicode-bidi: embed; color: #4549b8;
+  }
+  .sl-footer {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 13px; border-top: 1px solid #ededf5; background: #fafafe;
+  }
+  .sl-footbtn {
+    border: 1px solid #d9dcf0; background: #fff; color: #4549b8;
+    padding: 6px 13px; border-radius: 8px; font-weight: 600; font-size: 12.5px;
+  }
+  .sl-count { font-size: 11px; color: #9aa0b5; margin-inline-start: auto; }
+  .sl-btnfloat {
+    position: fixed; left: 470px; top: 388px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    border-radius: 999px; font-weight: 600; font-size: 13px;
+    box-shadow: 0 4px 14px rgba(80, 70, 220, .4);
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="brand">⬡ TechWire</span>
+    <span>News</span><span>Models</span><span>Research</span><span>API</span>
+  </div>
+  <div class="article">
+    <div class="kicker">Announcements</div>
+    <h1>Introducing Orion 2: our most capable model yet</h1>
+    <div class="meta">June 10, 2026 · 6 min read</div>
+    <p>Today we're releasing Orion 2, a new flagship model that sets the state of the
+    art across reasoning, coding, and multilingual benchmarks.</p>
+    <p><span class="selected">Orion 2 features a 1M-token context window and scores 94.2%
+    on GPQA Diamond, up from 88.1% in the previous generation. Long-horizon agentic
+    tasks see the largest gains: the model can now sustain multi-hour coding sessions
+    with 3× fewer intervention requests, and tool-calling reliability improves to
+    99.1% on our internal harness.</span></p>
+    <p>The model is available starting today in the API, with pricing unchanged from
+    the previous generation. Developers can opt into the new fast mode for
+    latency-sensitive applications.</p>
+    <p>We're also publishing a detailed system card describing our safety evaluations,
+    red-teaming process, and deployment safeguards.</p>
+  </div>
+
+  <div class="sl-btnfloat">
+    <svg class="sl-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+      <path d="M4 4h11a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 3.5V6a2 2 0 0 1 2-2z" fill="#fff"/>
+    </svg>
+    ترجم / اشرح
+  </div>
+
+  <div class="sl-panel">
+    <div class="sl-header">
+      <svg class="sl-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 4h11a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 3.5V6a2 2 0 0 1 2-2z" fill="#fff"/>
+        <path d="M19 9.5h.5A2.5 2.5 0 0 1 22 12v8l-3.2-2.5H14" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span class="sl-title">ScreenLocalizer</span>
+      <span class="sl-iconbtn">⚙</span>
+      <span class="sl-iconbtn">✕</span>
+    </div>
+    <div class="sl-modes">
+      <span class="sl-chip">ترجمة</span>
+      <span class="sl-chip active">شرح</span>
+      <span class="sl-chip">تبسيط</span>
+      <span class="sl-chip">تلخيص</span>
+    </div>
+    <div class="sl-body">
+      <p>الجديد في موديل <code>Orion 2</code> نقطتان أساسيتان تهمّان أي مستخدم:</p>
+      <p>أولًا، نافذة السياق (Context Window) وصلت إلى مليون توكن — يعني الموديل يقدر
+      يقرأ ويتذكر مشروعًا كاملًا أو كتابًا كاملًا في محادثة واحدة دون أن ينسى البداية.</p>
+      <p>ثانيًا، القفزة الحقيقية في المهام الطويلة: الموديل يشتغل ساعات متواصلة في
+      جلسات برمجة ويطلب تدخّلك ٣ مرات أقل من الجيل السابق، ونسبة نجاح استدعاء
+      الأدوات (Tool Calling) وصلت <code>99.1%</code> — وهذا ما يجعله مناسبًا فعلًا
+      لبناء الوكلاء الذكيين (AI Agents).</p>
+    </div>
+    <div class="sl-footer">
+      <span class="sl-footbtn">📋 نسخ</span>
+      <span class="sl-footbtn">↻ إعادة</span>
+      <span class="sl-count">312 chars</span>
+    </div>
+  </div>
+</body>
+</html>

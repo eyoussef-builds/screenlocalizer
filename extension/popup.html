@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 280px;
+      font: 13.5px/1.6 -apple-system, "Segoe UI", system-ui, "Noto Naskh Arabic", sans-serif;
+      color: #1f2330; background: #fff;
+    }
+    .head {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; padding: 14px 16px;
+    }
+    .head h1 { font-size: 15px; }
+    .head p { font-size: 11.5px; opacity: .85; }
+    .body { padding: 14px 16px; }
+    .status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; border-radius: 10px; font-weight: 600; font-size: 12.5px;
+      margin-bottom: 12px;
+    }
+    .status.ok { background: #e8f8ef; color: #157347; }
+    .status.warn { background: #fdf0e7; color: #b05c1c; }
+    .toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      font-weight: 700; font-size: 13px; margin-bottom: 14px; cursor: pointer;
+    }
+    .toggle input { width: 18px; height: 18px; accent-color: #6366f1; cursor: pointer; }
+    .btn {
+      display: block; width: 100%; text-align: center;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+      border: none; border-radius: 10px; padding: 10px;
+      font: 700 13px inherit; cursor: pointer;
+    }
+    .tip { font-size: 11.5px; color: #8a8fa5; margin-top: 10px; text-align: center; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1d1f2b; color: #e8eaf2; }
+      .status.ok { background: #15301f; color: #5fd393; }
+      .status.warn { background: #33261a; color: #f0a35e; }
+      .tip { color: #767c96; }
+    }
+  </style>
+</head>
+<body>
+  <div class="head">
+    <h1>ScreenLocalizer</h1>
+    <p>ترجمة وشرح فوري لأي نص تحدده</p>
+  </div>
+  <div class="body">
+    <div id="keyStatus" class="status warn">…</div>
+    <label class="toggle">
+      <span>زر التحديد مفعّل</span>
+      <input type="checkbox" id="enabled" />
+    </label>
+    <button class="btn" id="openOptions">⚙️ الإعدادات</button>
+    <div class="tip">حدّد نصًا في أي صفحة وسيظهر زر «ترجم / اشرح»</div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

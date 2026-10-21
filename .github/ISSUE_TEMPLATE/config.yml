@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Read the guide first · اقرأ الدليل أولًا
+    url: https://github.com/eyoussef-builds/screenlocalizer#-questions--answers
+    about: Most questions are answered in the Questions & answers section.
+  - name: 🔒 Report a security problem privately
+    url: https://github.com/eyoussef-builds/screenlocalizer/security/policy
+    about: Please don't open a public issue for security problems.
+  - name: 💼 Commercial licensing · الترخيص التجاري
+    url: mailto:hello@eyoussef.me
+    about: Want to use ScreenLocalizer commercially? Get in touch.

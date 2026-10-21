@@ -1,0 +1,26 @@
+name: 💡 Idea or feature request
+description: Suggest something new · اقترح فكرة جديدة
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: product
+    attributes:
+      label: For which version? · لأي نسخة؟
+      options:
+        - Browser extension (Chrome / Edge)
+        - Mac app
+        - Both · الاثنتين
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do? · ماذا تريد أن تفعل؟
+      description: Describe the situation and why the idea would help.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea · فكرتك
+      description: How do you imagine it working?

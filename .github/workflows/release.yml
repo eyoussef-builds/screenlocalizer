@@ -1,0 +1,34 @@
+name: Release
+
+# Push a tag like v1.2.0 to build both downloads and attach them to the GitHub release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v1.0.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Build Mac app (DMG)
+        run: mac/scripts/package-dmg.sh
+      - name: Package browser extension
+        run: scripts/package-extension.sh
+      - name: Attach downloads to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --title "ScreenLocalizer $TAG" --generate-notes --verify-tag
+          gh release upload "$TAG" mac/build/*.dmg dist/*.zip --clobber

@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build output
+dist/
+mac/build/
+mac/.build/
+mac/.swiftpm/
+*.dmg
+*.zip
+
+# Editors & tools
+.vscode/
+.idea/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+.claude/
+
+# Local notes and secrets — never commit
+.local/
+.env
+*.p12
+*.pem

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1280px; height: 800px; overflow: hidden; }
+    body {
+      font: 14px/1.7 -apple-system, "Segoe UI", system-ui, "Noto Naskh Arabic", sans-serif;
+      background: linear-gradient(160deg, #eef0fb, #f7f4ff); color: #1f2330;
+      display: flex; justify-content: center; align-items: center; gap: 56px;
+    }
+    .pitch { width: 360px; direction: rtl; }
+    .pitch .logo { width: 84px; height: 84px; border-radius: 20px; margin-bottom: 18px; }
+    .pitch h2 { font-size: 30px; line-height: 1.35; letter-spacing: -.01em; }
+    .pitch h2 em { font-style: normal; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .pitch p { color: #5a6072; font-size: 15.5px; margin-top: 12px; }
+    .pitch ul { margin-top: 14px; padding-inline-start: 20px; color: #3a3f50; font-size: 14.5px; }
+    .pitch li { margin-bottom: 6px; }
+    .card {
+      width: 560px; background: #fff;
+      border-radius: 16px; box-shadow: 0 18px 50px rgba(20,20,60,.14);
+      overflow: hidden;
+    }
+    .head { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 20px 26px; }
+    .head h1 { font-size: 18px; }
+    .head p { opacity: .85; font-size: 12.5px; margin-top: 2px; }
+    .body { padding: 22px 26px; }
+    .field { margin-bottom: 16px; }
+    label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 5px; }
+    .hint { font-size: 11.5px; color: #8a8fa5; margin-top: 3px; }
+    .input {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid #dcdff0; border-radius: 10px;
+      font-size: 13px; background: #fafbff;
+      direction: ltr; text-align: left; color: #1f2330;
+    }
+    .row { display: flex; gap: 12px; }
+    .row .field { flex: 1; }
+    .actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+    .btn { border: none; border-radius: 10px; padding: 9px 22px; font: 700 13px inherit; font-family: inherit; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+    .btn-ghost { background: #eef0fb; color: #4549b8; }
+    .ok { color: #1d9d57; font-size: 13px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="pitch">
+    <img class="logo" src="icon1024.png" alt="">
+    <h2>اقرأ المحتوى الإنجليزي <em>بعربيّتك</em></h2>
+    <p>حدّد أي نص — مقالة، إعلان موديل جديد، توثيق تقني — واحصل فورًا على ترجمة أو شرح جاهز تقدمه لجمهورك.</p>
+    <ul>
+      <li>٤ أوضاع: ترجمة، شرح، تبسيط، تلخيص</li>
+      <li>بمفتاح OpenAI الخاص بك — بدون اشتراكات</li>
+      <li>مفتاحك يبقى على جهازك فقط</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="head">
+      <h1>⚙️ إعدادات ScreenLocalizer</h1>
+      <p>حدّد أي نص في أي صفحة → ترجمة وشرح فوري بالعربية</p>
+    </div>
+    <div class="body">
+      <div class="field">
+        <label>مفتاح OpenAI API</label>
+        <div class="input">sk-••••••••••••••••••••••••••••3kF9</div>
+        <div class="hint">يُحفظ المفتاح على جهازك فقط ولا يُرسل لأي مكان غير OpenAI</div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>الموديل</label>
+          <div class="input">gpt-4o-mini</div>
+        </div>
+        <div class="field">
+          <label>لغة الناتج</label>
+          <div class="input">Arabic</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>الوضع الافتراضي عند فتح النافذة</label>
+        <div class="input" style="direction:rtl;text-align:right;">شرح</div>
+      </div>
+      <div class="field">
+        <label>تعليمات إضافية (اختياري)</label>
+        <div class="input" style="direction:rtl;text-align:right;">جمهوري مهتم بالذكاء الاصطناعي، استخدم أسلوبًا حماسيًا بسيطًا</div>
+      </div>
+      <div class="actions">
+        <span class="btn btn-primary">حفظ</span>
+        <span class="btn btn-ghost">اختبار المفتاح</span>
+        <span class="ok">✓ المفتاح يعمل</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

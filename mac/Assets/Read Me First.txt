@@ -1,0 +1,27 @@
+ScreenLocalizer for Mac
+=======================
+
+1. Drag "ScreenLocalizer" onto the "Applications" folder next to it.
+2. Open your Applications folder and double-click ScreenLocalizer.
+3. macOS will say it "could not verify" the app. That's expected: the app isn't signed with a paid
+   Apple certificate yet. Click "Done".
+4. Open the Apple menu > System Settings > Privacy & Security. Scroll down and click
+   "Open Anyway" next to ScreenLocalizer. Type your Mac password, then click "Open Anyway" again.
+   You only need to do this once.
+5. The welcome window walks you through the rest (language, AI key, permissions).
+
+Full step-by-step guide: https://github.com/eyoussef-builds/screenlocalizer
+
+
+ScreenLocalizer للماك
+====================
+
+١. اسحب «ScreenLocalizer» وأفلته على مجلد «Applications» (التطبيقات) الموجود بجانبه.
+٢. افتح مجلد التطبيقات وانقر مرتين على ScreenLocalizer.
+٣. سيقول macOS إنه «لم يتمكن من التحقق» من التطبيق. هذا طبيعي لأن التطبيق غير موقّع بشهادة Apple مدفوعة بعد.
+   اضغط «تم» (Done).
+٤. افتح قائمة Apple ← إعدادات النظام ← الخصوصية والأمان. انزل للأسفل واضغط «فتح على أي حال» (Open Anyway)
+   بجانب ScreenLocalizer، ثم اكتب كلمة سر الماك واضغط «فتح على أي حال» مرة أخرى. هذا مرة واحدة فقط.
+٥. نافذة الترحيب ستكمل معك الباقي (اللغة، مفتاح الذكاء الاصطناعي، الأذونات).
+
+الدليل الكامل خطوة بخطوة: https://github.com/eyoussef-builds/screenlocalizer/blob/main/README.ar.md

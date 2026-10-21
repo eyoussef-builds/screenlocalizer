@@ -1,0 +1,47 @@
+name: 🐞 Bug report
+description: Something doesn't work as expected · شيء لا يعمل كما يجب
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make ScreenLocalizer better! You can write in English or Arabic.
+        شكرًا لمساعدتك! يمكنك الكتابة بالعربية أو الإنجليزية.
+
+        ⚠️ **Never paste your API key** (it starts with `sk-`) in an issue. · **لا تلصق مفتاح API أبدًا.**
+  - type: dropdown
+    id: product
+    attributes:
+      label: Which version? · أي نسخة؟
+      options:
+        - Browser extension (Chrome / Edge)
+        - Mac app
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened? · ماذا حدث؟
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        1. I selected text in …
+        2. I pressed …
+        3. Expected … but saw …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App / extension version · رقم الإصدار
+      description: Mac app → Settings → About. Extension → chrome://extensions.
+      placeholder: "1.0.0"
+  - type: input
+    id: system
+    attributes:
+      label: System · النظام
+      placeholder: "macOS 15.4, Apple M2 / Windows 11, Edge 141"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or error message · لقطات شاشة أو رسالة الخطأ
+      description: Please hide any personal information first.

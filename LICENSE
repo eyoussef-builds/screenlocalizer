@@ -1,0 +1,89 @@
+ScreenLocalizer Personal Use License
+Version 1.0 — October 2026
+
+Copyright (c) 2026 Eslam Youssef (https://eyoussef.me). All rights reserved.
+
+ScreenLocalizer — the browser extension, the Mac app, their source code, documentation, images
+and every other file in this repository (together, the "Software") — is owned by Eslam Youssef
+(the "Author"). The Software is licensed, not sold. By downloading, installing, building or
+using the Software you agree to these terms. If you do not agree, do not use the Software.
+
+The source code is public so people can see how the Software works. It is not open source.
+
+
+1. WHAT YOU MAY DO (PERSONAL USE)
+
+The Author grants you a personal, non-exclusive, non-transferable, non-sublicensable,
+royalty-free license to:
+
+  (a) download, install and use the Software, as published by the Author in this repository
+      or on its official release pages, on devices you own or control, for your own personal,
+      non-commercial use;
+  (b) read the source code and build the Software from it, for that same personal use; and
+  (c) change your own copy for your own private, personal use, as long as you do not share
+      or distribute the changed version.
+
+
+2. WHAT YOU MAY NOT DO
+
+Unless the Author gives you permission in writing, you may not:
+
+  (a) Share or distribute it. You may not copy, publish, upload, re-upload, mirror, share,
+      sell, rent, lend, sublicense or otherwise make the Software or any part of it available
+      to anyone else — original or changed, as source code or as a ready-to-use app or
+      extension, for free or for payment. This includes publishing it in any app store,
+      extension store, website, file-sharing service or code repository.
+  (b) Use it commercially. You may not use the Software for any commercial purpose, including:
+      selling or reselling it; including it in, or using it to provide, a paid product or
+      service; using it in the course of a business, for an employer or for clients; or using
+      it to produce content or work you earn money from (for example a monetized video
+      channel, sponsored content or paid publications).
+  (c) Remove or change this license, the copyright notice or any other ownership notice.
+  (d) Use the name "ScreenLocalizer", the Author's name or the Software's logo to promote
+      anything, or in a way that suggests the Author endorses you or your work.
+
+
+3. WHAT IS STILL ALLOWED
+
+  (a) Links. You may freely share links to this repository and its official release pages.
+  (b) GitHub forks. GitHub's Terms of Service let GitHub users view and fork public
+      repositories on GitHub. A fork does not give you any rights beyond this license: you may
+      use a fork only to prepare contributions (pull requests) to this repository and for the
+      personal use allowed in section 1.
+  (c) Contributions. Contributions you submit are covered by CONTRIBUTING.md.
+
+
+4. COMMERCIAL LICENSES AND OTHER PERMISSIONS
+
+For commercial use, redistribution, or any other permission not granted here, contact the
+Author at hello@eyoussef.me. Permissions are valid only when given in writing by the Author.
+
+
+5. THIRD-PARTY SERVICES
+
+The Software sends text you choose to the AI service you configure (for example OpenAI), using
+your own API key. You are responsible for following that service's terms and paying its costs.
+
+
+6. TERMINATION
+
+This license ends automatically if you break any of its terms. When it ends, you must stop using
+the Software and delete every copy you have. Sections 2, 6, 7 and 8 continue to apply.
+
+
+7. NO WARRANTY AND LIMITATION OF LIABILITY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NON-INFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL THE AUTHOR BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+8. OTHER TERMS
+
+All rights not expressly granted in this license are reserved by the Author. The Author may
+publish new versions of this license; a new version applies to versions of the Software
+released under it. If any part of this license is found to be unenforceable, the rest of it
+stays in effect.

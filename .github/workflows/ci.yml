@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    name: Browser extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Images carry no metadata
+        run: python3 scripts/clean-images.py --check
+      - name: Check JavaScript syntax
+        run: for f in extension/*.js; do node --check "$f"; done
+      - name: Validate manifest
+        run: |
+          node -e '
+            const m = require("./extension/manifest.json");
+            if (m.manifest_version !== 3) throw new Error("manifest_version must be 3");
+            for (const k of ["name", "version", "background", "content_scripts", "icons"]) if (!m[k]) throw new Error("missing " + k);
+            console.log(`${m.name} ${m.version} ✓`);
+          '
+      - name: Package
+        run: scripts/package-extension.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenlocalizer-extension
+          path: dist/*.zip
+
+  mac:
+    name: Mac app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Arabic translations
+        run: python3 mac/scripts/check-strings.py
+      - name: Build app and disk image
+        run: mac/scripts/package-dmg.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScreenLocalizer-mac
+          path: mac/build/*.dmg

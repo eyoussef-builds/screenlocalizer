@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  svg { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded-square background -->
+  <rect x="2" y="2" width="124" height="124" rx="28" fill="url(#bg)"/>
+  <!-- big bubble with Arabic ain -->
+  <path d="M24 30 a12 12 0 0 1 12 -12 h44 a12 12 0 0 1 12 12 v30 a12 12 0 0 1 -12 12 h-40 l-16 14 z" fill="#ffffff"/>
+  <text x="58" y="56" font-size="34" font-weight="bold" fill="#6366f1"
+        text-anchor="middle" font-family="'Geeza Pro','Noto Naskh Arabic',sans-serif">ع</text>
+  <!-- small bubble with A -->
+  <path d="M104 64 a10 10 0 0 1 10 10 v22 a10 10 0 0 1 -10 10 h-30 a10 10 0 0 1 -10 -10 v-22 a10 10 0 0 1 10 -10 z M104 106 l8 10 v-12 z"
+        fill="#ffffff" opacity="0.28"/>
+  <rect x="64" y="64" width="50" height="42" rx="10" fill="none" stroke="#ffffff" stroke-width="5"/>
+  <path d="M104 104 l9 11 v-13 z" fill="#ffffff"/>
+  <text x="89" y="97" font-size="32" font-weight="bold" fill="#ffffff"
+        text-anchor="middle" font-family="Arial, sans-serif">A</text>
+</svg>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>إعدادات ScreenLocalizer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font: 14px/1.7 -apple-system, "Segoe UI", system-ui, "Noto Naskh Arabic", sans-serif;
+      background: #f4f5fb; color: #1f2330;
+      display: flex; justify-content: center; padding: 40px 16px;
+    }
+    .card {
+      width: 100%; max-width: 640px; background: #fff;
+      border-radius: 16px; box-shadow: 0 8px 30px rgba(20,20,60,.08);
+      overflow: hidden;
+    }
+    .head {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; padding: 22px 26px;
+    }
+    .head h1 { font-size: 19px; }
+    .head p { opacity: .85; font-size: 13px; margin-top: 2px; }
+    .body { padding: 24px 26px; }
+    .field { margin-bottom: 20px; }
+    label { display: block; font-weight: 700; font-size: 13.5px; margin-bottom: 6px; }
+    .hint { font-size: 12px; color: #8a8fa5; margin-top: 4px; }
+    .hint a { color: #6366f1; }
+    input[type="text"], input[type="password"], select, textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid #dcdff0; border-radius: 10px;
+      font: inherit; font-size: 13.5px; background: #fafbff;
+      direction: ltr; text-align: left;
+    }
+    textarea { direction: rtl; text-align: right; min-height: 70px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #8b8ff0; }
+    .row { display: flex; gap: 12px; }
+    .row .field { flex: 1; }
+    .keywrap { position: relative; }
+    .keywrap input { padding-left: 38px; }
+    .keywrap button {
+      position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+      border: none; background: none; cursor: pointer; font-size: 15px; color: #8a8fa5;
+    }
+    .actions { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+    .btn {
+      border: none; border-radius: 10px; padding: 10px 22px;
+      font: 700 13.5px inherit; cursor: pointer;
+    }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+    .btn-ghost { background: #eef0fb; color: #4549b8; }
+    #status { font-size: 13px; font-weight: 600; }
+    #status.ok { color: #1d9d57; }
+    #status.err { color: #c0392b; }
+    .check { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; }
+    .check input { width: 16px; height: 16px; accent-color: #6366f1; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #14151d; color: #e8eaf2; }
+      .card { background: #1d1f2b; }
+      input[type="text"], input[type="password"], select, textarea { background: #262a3d; border-color: #3a3f58; color: #e8eaf2; }
+      .btn-ghost { background: #262a3d; color: #aeb3f5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <h1>⚙️ إعدادات ScreenLocalizer</h1>
+      <p>حدّد أي نص في أي صفحة → ترجمة وشرح فوري بالعربية</p>
+    </div>
+    <div class="body">
+      <div class="field">
+        <label for="apiKey">مفتاح OpenAI API</label>
+        <div class="keywrap">
+          <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" />
+          <button id="toggleKey" type="button" title="إظهار / إخفاء">👁</button>
+        </div>
+        <div class="hint">
+          يُحفظ المفتاح على جهازك فقط ولا يُرسل لأي مكان غير OpenAI.
+          احصل على مفتاح من <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="model">الموديل</label>
+          <input type="text" id="model" list="models" placeholder="gpt-5-mini" />
+          <datalist id="models">
+            <option value="gpt-5-mini"></option>
+            <option value="gpt-5-nano"></option>
+            <option value="gpt-5"></option>
+            <option value="gpt-4.1-mini"></option>
+            <option value="gpt-4o-mini"></option>
+          </datalist>
+          <div class="hint">gpt-5-mini سريع ورخيص ومناسب للترجمة · gpt-5-mini is fast, cheap and great for translation</div>
+        </div>
+        <div class="field">
+          <label for="targetLanguage">لغة الناتج</label>
+          <input type="text" id="targetLanguage" list="langs" placeholder="Arabic" />
+          <datalist id="langs">
+            <option value="Arabic"></option>
+            <option value="Egyptian Arabic"></option>
+            <option value="French"></option>
+            <option value="Spanish"></option>
+            <option value="Turkish"></option>
+          </datalist>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="defaultMode">الوضع الافتراضي عند فتح النافذة</label>
+        <select id="defaultMode">
+          <option value="translate">ترجمة</option>
+          <option value="explain">شرح</option>
+          <option value="simplify">تبسيط</option>
+          <option value="summarize">تلخيص</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="customInstructions">تعليمات إضافية (اختياري)</label>
+        <textarea id="customInstructions" placeholder="مثال: جمهوري مهتم بالذكاء الاصطناعي، استخدم أسلوبًا حماسيًا..."></textarea>
+      </div>
+
+      <div class="field">
+        <label class="check"><input type="checkbox" id="enabled" /> إظهار زر «ترجم / اشرح» عند تحديد النص</label>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="save">حفظ</button>
+        <button class="btn btn-ghost" id="test">اختبار المفتاح</button>
+        <span id="status"></span>
+      </div>
+    </div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

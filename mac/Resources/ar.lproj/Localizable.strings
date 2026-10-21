@@ -1,0 +1,226 @@
+/* ScreenLocalizer — Arabic interface. Keys are the English UI text. Check coverage with: python3 -I scripts/check-strings.py */
+
+/* Modes & sources */
+"Translate" = "ترجمة";
+"Explain" = "شرح";
+"Simplify" = "تبسيط";
+"Summarize" = "تلخيص";
+"Video Script" = "سكربت فيديو";
+"Social Post" = "منشور";
+"Selected text" = "النص المحدد";
+"Screen capture" = "التقاط الشاشة";
+"Paste box" = "صندوق اللصق";
+"Clipboard" = "الحافظة";
+"Translate / Explain" = "ترجم / اشرح";
+
+/* Result panel */
+"Private" = "مخفية";
+"Visible" = "ظاهرة";
+"Hidden from screen recordings and screenshots. Click to show it in recordings." = "مخفية من تسجيلات الشاشة ولقطاتها. انقر لإظهارها في التسجيل.";
+"Visible in screen recordings. Click to hide it from recordings." = "ظاهرة في تسجيلات الشاشة. انقر لإخفائها من التسجيل.";
+"Show the original text side by side" = "عرض النص الأصلي جنبًا إلى جنب";
+"Smaller text" = "تصغير النص";
+"Larger text" = "تكبير النص";
+"Settings" = "الإعدادات";
+"Close (Esc)" = "إغلاق (Esc)";
+"Paste" = "لصق";
+"Go" = "تنفيذ";
+"Paste or type text here, then press ⌘↩" = "الصق النص أو اكتبه هنا، ثم اضغط ⌘↩";
+"Results appear here." = "تظهر النتائج هنا.";
+"Add API Key…" = "إضافة مفتاح API…";
+"Try Again" = "حاول مجددًا";
+"Ask a follow-up question…" = "اطرح سؤالًا متابعًا…";
+"Send" = "إرسال";
+"Copy" = "نسخ";
+"Copied" = "تم النسخ";
+"Regenerate" = "إعادة التوليد";
+"Read Aloud" = "قراءة صوتية";
+"Stop" = "إيقاف";
+
+/* Errors & toasts */
+"No API key yet. Add your key in Settings → AI." = "لم تُضِف مفتاح API بعد. أضِفه من الإعدادات ← الذكاء الاصطناعي.";
+"The API base URL is not valid. Check Settings → AI." = "رابط الـ API غير صالح. تحقّق من الإعدادات ← الذكاء الاصطناعي.";
+"The API key was rejected. Check it in Settings → AI." = "تم رفض مفتاح API. تحقّق منه في الإعدادات ← الذكاء الاصطناعي.";
+"Model or endpoint not found. Check the model name in Settings → AI." = "النموذج أو الرابط غير موجود. تحقّق من اسم النموذج في الإعدادات ← الذكاء الاصطناعي.";
+"Rate limit reached or no credit left on this API account." = "تم بلوغ حد الاستخدام أو نفد الرصيد في حساب الـ API هذا.";
+"The AI service returned an error (HTTP %d)." = "أعادت خدمة الذكاء الاصطناعي خطأً (HTTP %d).";
+"Couldn't reach the AI service. Check your internet connection." = "تعذّر الاتصال بخدمة الذكاء الاصطناعي. تحقّق من اتصال الإنترنت.";
+"Couldn't read the selected text in this app." = "تعذّرت قراءة النص المحدد في هذا التطبيق.";
+"Couldn't capture that part of the screen." = "تعذّر التقاط هذا الجزء من الشاشة.";
+"ScreenLocalizer needs Screen Recording permission to read text from the screen." = "يحتاج ScreenLocalizer إلى إذن تسجيل الشاشة لقراءة النص من الشاشة.";
+"Allow Accessibility so ScreenLocalizer can read selected text." = "اسمح بإذن تسهيلات الاستخدام ليتمكن ScreenLocalizer من قراءة النص المحدد.";
+"Allow Screen Recording so ScreenLocalizer can read text from the screen." = "اسمح بإذن تسجيل الشاشة ليتمكن ScreenLocalizer من قراءة النص من الشاشة.";
+"Select some text first, then press the shortcut." = "حدّد نصًا أولًا، ثم اضغط الاختصار.";
+"No text found in that area." = "لم يُعثر على نص في هذه المنطقة.";
+"Drag a box around the text to read · Esc to cancel" = "ارسم مربعًا حول النص المراد قراءته · Esc للإلغاء";
+"ScreenLocalizer is ready. Select text and press %@." = "ScreenLocalizer جاهز. حدّد نصًا واضغط %@.";
+
+/* Menus */
+"About ScreenLocalizer" = "حول ScreenLocalizer";
+"Settings…" = "الإعدادات…";
+"History…" = "السجل…";
+"Hide ScreenLocalizer" = "إخفاء ScreenLocalizer";
+"Quit ScreenLocalizer" = "إنهاء ScreenLocalizer";
+"Edit" = "تحرير";
+"Undo" = "تراجع";
+"Redo" = "إعادة";
+"Cut" = "قص";
+"Select All" = "تحديد الكل";
+"Window" = "نافذة";
+"Close" = "إغلاق";
+"Minimize" = "تصغير";
+"Translate Selection" = "ترجمة النص المحدد";
+"Capture Text from Screen…" = "التقاط نص من الشاشة…";
+"Paste Box" = "صندوق اللصق";
+"Show Last Result" = "عرض آخر نتيجة";
+"Default Mode" = "الوضع الافتراضي";
+"Floating Button on Selection" = "الزر العائم عند التحديد";
+"Hide Panel from Screen Recordings" = "إخفاء النافذة من تسجيلات الشاشة";
+"⚠️ Grant Permissions…" = "⚠️ منح الأذونات…";
+
+/* Shortcuts */
+"Translate selected text" = "ترجمة النص المحدد";
+"Capture text from screen" = "التقاط نص من الشاشة";
+"Open paste box" = "فتح صندوق اللصق";
+"Press shortcut…" = "اضغط الاختصار…";
+"None" = "بلا";
+"Reset to default" = "استعادة الافتراضي";
+"This shortcut is already used by another app. Choose a different one." = "هذا الاختصار مستخدم في تطبيق آخر. اختر اختصارًا مختلفًا.";
+
+/* Settings: tabs */
+"ScreenLocalizer Settings" = "إعدادات ScreenLocalizer";
+"General" = "عام";
+"AI" = "الذكاء الاصطناعي";
+"Triggers" = "طرق التشغيل";
+"Glossary" = "المصطلحات";
+"Voice" = "الصوت";
+"Permissions" = "الأذونات";
+"About" = "حول";
+
+/* Settings: general */
+"Results" = "النتائج";
+"Translate into" = "الترجمة إلى";
+"Other…" = "لغة أخرى…";
+"Language name (in English, e.g. Swahili)" = "اسم اللغة (بالإنجليزية، مثل Swahili)";
+"Default mode" = "الوضع الافتراضي";
+"Custom instructions (optional)" = "تعليمات مخصّصة (اختياري)";
+"Example: My audience is into AI; use an energetic, simple tone." = "مثال: جمهوري مهتم بالذكاء الاصطناعي، استخدم أسلوبًا حماسيًا وبسيطًا.";
+"Panel" = "نافذة النتائج";
+"Hide the result panel from screen recordings by default" = "إخفاء نافذة النتائج من تسجيلات الشاشة افتراضيًا";
+"Text size" = "حجم النص";
+"Save results to History" = "حفظ النتائج في السجل";
+"App" = "التطبيق";
+"Interface language" = "لغة الواجهة";
+"Same as macOS" = "مثل macOS";
+"Relaunch to switch the interface language." = "أعِد التشغيل لتغيير لغة الواجهة.";
+"Relaunch Now" = "إعادة التشغيل الآن";
+"Open ScreenLocalizer at login" = "فتح ScreenLocalizer عند تسجيل الدخول";
+
+/* Settings: AI */
+"AI provider" = "مزوّد الذكاء الاصطناعي";
+"Provider" = "المزوّد";
+"API base URL" = "رابط الـ API الأساسي";
+"API key" = "مفتاح API";
+"Show or hide the key" = "إظهار المفتاح أو إخفاؤه";
+"Save Key" = "حفظ المفتاح";
+"Get an API key from %@ ↗" = "احصل على مفتاح API من %@ ↗";
+"This provider runs locally or doesn't need a key; leave it empty if so." = "هذا المزوّد يعمل محليًا أو لا يحتاج مفتاحًا؛ اتركه فارغًا في هذه الحالة.";
+"Model" = "النموذج";
+"Choose" = "اختر";
+"Test Connection" = "اختبار الاتصال";
+"Connected" = "متصل";
+"Connected · %d models available" = "متصل · %d نموذج متاح";
+"Works with OpenAI and any OpenAI-compatible API (OpenRouter, Groq, Ollama, LM Studio…). Keys are stored in your macOS Keychain and sent only to the provider you choose." = "يعمل مع OpenAI وأي API متوافق معه (OpenRouter وGroq وOllama وLM Studio…). تُحفظ المفاتيح في سلسلة مفاتيح macOS ولا تُرسل إلا إلى المزوّد الذي تختاره.";
+
+/* Settings: triggers */
+"Keyboard shortcuts" = "اختصارات لوحة المفاتيح";
+"Shortcuts work in every app. Click a shortcut, then press the new keys." = "تعمل الاختصارات في كل التطبيقات. انقر على اختصار ثم اضغط المفاتيح الجديدة.";
+"Floating button" = "الزر العائم";
+"Show a «Translate / Explain» button when I select text" = "إظهار زر «ترجم / اشرح» عند تحديد نص";
+"Appears next to your selection in any app, like the browser extension. It disappears when you click elsewhere or start typing." = "يظهر بجانب النص الذي تحدده في أي تطبيق، مثل إضافة المتصفح، ويختفي عند النقر في مكان آخر أو بدء الكتابة.";
+"When I copy text" = "عند نسخ نص";
+"Do nothing" = "لا شيء";
+"Show the translate button" = "إظهار زر الترجمة";
+"Translate immediately" = "الترجمة فورًا";
+"“Translate immediately” sends every text you copy to the AI provider, which uses API credits." = "خيار «الترجمة فورًا» يرسل كل نص تنسخه إلى مزوّد الذكاء الاصطناعي، مما يستهلك رصيد الـ API.";
+
+/* Settings: glossary */
+"Term (e.g. agent)" = "المصطلح (مثال: agent)";
+"Always render as (e.g. وكيل)" = "تُكتب دائمًا هكذا (مثال: وكيل)";
+"Add Term" = "إضافة مصطلح";
+"Every result uses these renderings, so terms stay consistent across your videos." = "تستخدم كل النتائج هذه الصيغ، فتبقى المصطلحات موحّدة في كل فيديوهاتك.";
+
+/* Settings: voice */
+"Read aloud" = "القراءة الصوتية";
+"Voice engine" = "محرك الصوت";
+"macOS voice (free, offline)" = "صوت macOS (مجاني، بدون إنترنت)";
+"OpenAI voice (natural, uses your key)" = "صوت OpenAI (طبيعي، يستخدم مفتاحك)";
+"OpenAI voice" = "صوت OpenAI";
+"OpenAI voice needs an OpenAI API key (Settings → AI with OpenAI selected)." = "صوت OpenAI يحتاج مفتاح OpenAI API (الإعدادات ← الذكاء الاصطناعي مع اختيار OpenAI).";
+"macOS voice" = "صوت macOS";
+"Automatic" = "تلقائي";
+"No macOS voice installed for this language. Add one in System Settings → Accessibility → Spoken Content → System Voice → Manage Voices." = "لا يوجد صوت macOS مثبّت لهذه اللغة. أضِف واحدًا من إعدادات النظام ← تسهيلات الاستخدام ← المحتوى المنطوق ← صوت النظام ← إدارة الأصوات.";
+"Test Voice" = "تجربة الصوت";
+
+/* Settings: permissions */
+"macOS permissions" = "أذونات macOS";
+"Accessibility" = "تسهيلات الاستخدام";
+"Reads the text you select in other apps (shortcut and floating button)." = "يقرأ النص الذي تحدده في التطبيقات الأخرى (الاختصار والزر العائم).";
+"Screen Recording" = "تسجيل الشاشة";
+"Reads text from the part of the screen you box (OCR). Nothing is recorded or uploaded except the text." = "يقرأ النص من الجزء الذي تحدده من الشاشة (OCR). لا يُسجَّل أو يُرفع أي شيء سوى النص.";
+"After granting Screen Recording, macOS may ask you to quit and reopen ScreenLocalizer." = "بعد منح إذن تسجيل الشاشة، قد يطلب منك macOS إغلاق ScreenLocalizer وإعادة فتحه.";
+"Relaunch ScreenLocalizer" = "إعادة تشغيل ScreenLocalizer";
+"Granted" = "ممنوح";
+"Grant…" = "منح…";
+
+/* Settings: about */
+"Version %@ (%@)" = "الإصدار %@ (%@)";
+"Select any text — or any part of your screen — and get it translated, explained or summarized in your language." = "حدّد أي نص — أو أي جزء من شاشتك — واحصل على ترجمته أو شرحه أو تلخيصه بلغتك.";
+"Made by Eslam Youssef" = "من تطوير إسلام يوسف";
+"Source code ↗" = "الكود المصدري ↗";
+"Check for Updates ↗" = "التحقق من التحديثات ↗";
+"Check for Updates…" = "التحقق من التحديثات…";
+"Free for personal use only." = "مجاني للاستخدام الشخصي فقط.";
+"Privacy policy ↗" = "سياسة الخصوصية ↗";
+
+/* Onboarding */
+"Welcome to ScreenLocalizer" = "مرحبًا بك في ScreenLocalizer";
+"Get Started" = "ابدأ";
+"Continue" = "متابعة";
+"Back" = "رجوع";
+"Which language do you want results in?" = "بأي لغة تريد النتائج؟";
+"Translations, explanations and summaries will be written in this language. You can change it any time." = "ستُكتب الترجمات والشروحات والملخصات بهذه اللغة. يمكنك تغييرها في أي وقت.";
+"Connect your AI provider" = "اربط مزوّد الذكاء الاصطناعي";
+"ScreenLocalizer uses your own API key, so there's no subscription. OpenAI is the default; any OpenAI-compatible service works." = "يستخدم ScreenLocalizer مفتاح API الخاص بك، فلا يوجد اشتراك. OpenAI هو الافتراضي، وتعمل أي خدمة متوافقة مع OpenAI.";
+"Allow access" = "السماح بالوصول";
+"macOS asks you to approve these once. Turn ScreenLocalizer on in each list that opens." = "يطلب macOS موافقتك مرة واحدة فقط. فعّل ScreenLocalizer في كل قائمة تُفتح.";
+"You're all set" = "كل شيء جاهز";
+"ScreenLocalizer lives in your menu bar. Use it from any app:" = "يعمل ScreenLocalizer من شريط القوائم. استخدمه من أي تطبيق:";
+"Or just select text — a «Translate / Explain» button appears." = "أو حدّد أي نص فقط — وسيظهر زر «ترجم / اشرح».";
+"Start Using ScreenLocalizer" = "ابدأ استخدام ScreenLocalizer";
+
+/* History */
+"ScreenLocalizer History" = "سجل ScreenLocalizer";
+"Search history" = "البحث في السجل";
+"No history yet" = "لا يوجد سجل بعد";
+"Results you generate are saved here automatically." = "تُحفظ النتائج التي تولّدها هنا تلقائيًا.";
+"%d items" = "%d عنصر";
+"%d items selected" = "تم تحديد %d عنصر";
+"Export them together as one Markdown script." = "صدّرها معًا كسكربت Markdown واحد.";
+"Select an item" = "اختر عنصرًا";
+"Mode" = "الوضع";
+"All modes" = "كل الأوضاع";
+"Export" = "تصدير";
+"Export Selected…" = "تصدير المحدد…";
+"Export Today…" = "تصدير عناصر اليوم…";
+"Export All Shown…" = "تصدير كل المعروض…";
+"Delete" = "حذف";
+"Delete selected items" = "حذف العناصر المحددة";
+"Clear All History…" = "مسح السجل بالكامل…";
+"Delete all history?" = "حذف السجل بالكامل؟";
+"Delete All" = "حذف الكل";
+"This can't be undone." = "لا يمكن التراجع عن ذلك.";
+"Open in Panel" = "فتح في النافذة";
+"Original" = "النص الأصلي";
+"Follow-up questions" = "أسئلة المتابعة";
+"Q:" = "س:";
