@@ -166,12 +166,21 @@ struct PermissionsSection: View {
                       action: Permissions.requestScreenRecording)
         Text("After granting Screen Recording, macOS may ask you to quit and reopen ScreenLocalizer.")
             .font(.caption).foregroundStyle(.secondary)
-        Button(L("Relaunch ScreenLocalizer")) { AppRelauncher.relaunch() }
-            .controlSize(.small)
-            .onReceive(timer) { _ in
-                accessibility = AX.isTrusted
-                screen = ScreenOCR.hasPermission
+        if !accessibility || !screen {
+            Text("Already switched on in System Settings, but still not working? That can happen after an update. Click “Reset Permissions & Try Again”, or remove every ScreenLocalizer entry from the list with the − button and click Grant… again.")
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        HStack {
+            Button(L("Relaunch ScreenLocalizer")) { AppRelauncher.relaunch() }
+            if !accessibility || !screen {
+                Button(L("Reset Permissions & Try Again")) { Permissions.resetAndRequest() }
             }
+        }
+        .controlSize(.small)
+        .onReceive(timer) { _ in
+            accessibility = AX.isTrusted
+            screen = ScreenOCR.hasPermission
+        }
     }
 
     private func permissionRow(granted: Bool, title: String, detail: String, action: @escaping () -> Void) -> some View {

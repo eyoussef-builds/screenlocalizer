@@ -46,10 +46,12 @@ Onboarding asks for the result language, the AI provider + key, and two macOS pe
 
 ### Updates and permissions
 
-Builds are ad-hoc signed, so macOS treats each new build as a new app: after an update, turn
-ScreenLocalizer off and on again in System Settings → Privacy & Security → Accessibility / Screen
-Recording, and allow Keychain access once. Run `scripts/setup-signing.sh` once (it asks for your
-password) and future builds keep those approvals.
+macOS ties Accessibility, Screen Recording and Keychain approvals to the app's signature. Official
+releases are signed with one stable self-signed certificate ("ScreenLocalizer Local Signing"), so
+approvals survive updates. Builds made elsewhere are ad-hoc signed unless that machine has run
+`scripts/setup-signing.sh` (once; it asks for the user's password), so macOS treats each such build as
+a new app. **Settings → Permissions → Reset Permissions & Try Again** clears the app's own stale
+entries (via `tccutil`) and asks again.
 
 ## Distribution
 

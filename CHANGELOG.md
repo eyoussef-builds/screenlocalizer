@@ -2,6 +2,18 @@
 
 All notable changes to ScreenLocalizer. Dates are in YYYY-MM-DD.
 
+## [1.0.1] — 2026-10-21
+
+### Mac app 1.0.1
+
+- **Permissions now survive updates.** Releases are signed with a stable certificate, so macOS keeps
+  Accessibility, Screen Recording and Keychain approvals across future updates. (Updating from 1.0.0
+  asks one last time.)
+- New **Reset Permissions & Try Again** button (Settings → Permissions and the welcome screen) that
+  clears ScreenLocalizer's own outdated permission entries and asks again. **Grant…** for Accessibility
+  does this automatically.
+- Clearer guidance when macOS shows ScreenLocalizer more than once in its permission lists.
+
 ## [1.0.0] — 2026-10-21 — First public release
 
 ### Mac app 1.0.0 (new)
@@ -32,4 +44,5 @@ All notable changes to ScreenLocalizer. Dates are in YYYY-MM-DD.
   in Arabic (or any language), streamed from OpenAI with your own key.
 - Right-click menu and `Ctrl/⌘ + Shift + Y` shortcut.
 
+[1.0.1]: https://github.com/eyoussef-builds/screenlocalizer/releases/tag/v1.0.1
 [1.0.0]: https://github.com/eyoussef-builds/screenlocalizer/releases/tag/v1.0.0

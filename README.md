@@ -374,10 +374,12 @@ Interface language**.
 2. Quit ScreenLocalizer (menu bar icon → **Quit ScreenLocalizer**).
 3. Drag the new app onto **Applications** and choose **Replace**.
 4. Open it. If macOS blocks it again, repeat the **Open Anyway** step.
-5. Because the app isn't signed with a paid Apple certificate yet, macOS may forget its permissions
-   after an update. If the shortcut or the screen box stops working: open **System Settings →
-   Privacy & Security → Accessibility**, select ScreenLocalizer, click **−** to remove it, then turn it
-   on again from the app (**Settings → Permissions → Grant…**). Do the same for **Screen Recording**.
+5. From version 1.0.1 on, updates keep ScreenLocalizer's permissions. (Updating from 1.0.0 is the one
+   exception: macOS asks once more.) If the shortcut or the screen box ever stops working after an
+   update, open **Settings → Permissions** in the app, click **Reset Permissions & Try Again**, and
+   switch ScreenLocalizer on in the list that opens. If ScreenLocalizer appears in that list more than
+   once, remove the extra entries with **−**. If macOS asks whether ScreenLocalizer may use your saved
+   key, click **Always Allow**.
 
 ---
 
@@ -447,7 +449,8 @@ selection for you), or the screen box **⌃⌥O**. Also check **Settings → Per
 <summary><b>The shortcut does nothing.</b></summary>
 
 Another app may already use the same keys. Choose different ones in **Settings → Triggers**. If it
-stopped working right after an update, re-allow the permissions (see **Update the Mac app** above).
+stopped working right after an update, open **Settings → Permissions** and click **Reset Permissions &
+Try Again**.
 </details>
 
 <details>

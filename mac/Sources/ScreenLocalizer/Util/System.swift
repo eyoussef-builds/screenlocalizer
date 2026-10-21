@@ -10,13 +10,37 @@ enum Permissions {
         open("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
     }
 
+    /// After an update macOS can keep an old, switched-on row that no longer matches the app, so
+    /// clear ScreenLocalizer's own Accessibility entry before asking again.
     static func requestAccessibility() {
+        if !AX.isTrusted { resetOwnEntry(service: "Accessibility") }
         AX.requestTrust()
         openAccessibilitySettings()
     }
 
     static func requestScreenRecording() {
         if !CGRequestScreenCaptureAccess() { openScreenRecordingSettings() }
+    }
+
+    /// Clears both of ScreenLocalizer's own privacy entries and asks for them again.
+    /// Screen Recording isn't reset by the normal Grant button: a fresh approval only shows
+    /// up after a relaunch, and resetting it then would throw that approval away.
+    static func resetAndRequest() {
+        resetOwnEntry(service: "Accessibility")
+        resetOwnEntry(service: "ScreenCapture")
+        AX.requestTrust()
+        CGRequestScreenCaptureAccess()
+        openAccessibilitySettings()
+    }
+
+    private static func resetOwnEntry(service: String) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+        task.arguments = ["reset", service, AppInfo.bundleID]
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        try? task.run()
+        task.waitUntilExit()
     }
 
     private static func open(_ string: String) {

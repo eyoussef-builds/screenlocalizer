@@ -170,6 +170,8 @@
 "Reads text from the part of the screen you box (OCR). Nothing is recorded or uploaded except the text." = "يقرأ النص من الجزء الذي تحدده من الشاشة (OCR). لا يُسجَّل أو يُرفع أي شيء سوى النص.";
 "After granting Screen Recording, macOS may ask you to quit and reopen ScreenLocalizer." = "بعد منح إذن تسجيل الشاشة، قد يطلب منك macOS إغلاق ScreenLocalizer وإعادة فتحه.";
 "Relaunch ScreenLocalizer" = "إعادة تشغيل ScreenLocalizer";
+"Reset Permissions & Try Again" = "إعادة ضبط الأذونات والمحاولة مجددًا";
+"Already switched on in System Settings, but still not working? That can happen after an update. Click “Reset Permissions & Try Again”, or remove every ScreenLocalizer entry from the list with the − button and click Grant… again." = "مفعّل في إعدادات النظام لكنه لا يعمل؟ قد يحدث هذا بعد التحديث. اضغط «إعادة ضبط الأذونات والمحاولة مجددًا»، أو احذف كل عناصر ScreenLocalizer من القائمة بزر − ثم اضغط «منح…» مرة أخرى.";
 "Granted" = "ممنوح";
 "Grant…" = "منح…";
 
