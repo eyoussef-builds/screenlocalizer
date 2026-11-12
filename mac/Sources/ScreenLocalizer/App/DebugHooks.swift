@@ -133,11 +133,15 @@ enum DebugHooks {
         info["speechError"] = Speaker.shared.lastError ?? ""
         info["layoutDirection"] = NSApp.userInterfaceLayoutDirection == .rightToLeft ? "rtl" : "ltr"
         info["appIsActive"] = NSApp.isActive
+        info["providerID"] = AppSettings.shared.providerID
+        info["model"] = AppSettings.shared.model
+        info["chatGPTStatus"] = String(describing: ChatGPTAuthStore.shared.status)
+        info["claudeStatus"] = String(describing: ClaudeAuthStore.shared.status)
         info["apiKeyLength"] = AppSettings.shared.apiKey?.count ?? 0
         info["hotkeys"] = Dictionary(uniqueKeysWithValues: AppSettings.shared.hotkeys.map { ($0.key.rawValue, $0.value.display) })
-        if let focused = AX.value(AX.systemWide, kAXFocusedApplicationAttribute) {
+        if let focused = AX.elementValue(AX.systemWide, kAXFocusedApplicationAttribute) {
             var pid: pid_t = 0
-            AXUIElementGetPid(focused as! AXUIElement, &pid)
+            AXUIElementGetPid(focused, &pid)
             info["keyboardFocusApp"] = NSRunningApplication(processIdentifier: pid)?.localizedName ?? "pid \(pid)"
         }
         info["preferredLocalization"] = Bundle.main.preferredLocalizations.first ?? ""

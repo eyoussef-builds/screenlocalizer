@@ -17,20 +17,58 @@ enum ScreenOCRError: LocalizedError {
 enum ScreenOCR {
     static var hasPermission: Bool { CGPreflightScreenCaptureAccess() }
 
+    private actor ContentCache {
+        private var cached: SCShareableContent?
+        private var cachedAt: Date = .distantPast
+        private var observerInstalled = false
+
+        func invalidate() {
+            cached = nil
+        }
+
+        func shareableContent(forceRefresh: Bool = false) async throws -> SCShareableContent {
+            if !observerInstalled {
+                observerInstalled = true
+                NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: nil) { _ in
+                    Task { await ScreenOCR.cache.invalidate() }
+                }
+            }
+            if !forceRefresh, let cached, Date().timeIntervalSince(cachedAt) < 120 {
+                return cached
+            }
+            let fresh = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            cached = fresh
+            cachedAt = Date()
+            return fresh
+        }
+    }
+
+    private static let cache = ContentCache()
+
+    static func prewarm() {
+        guard hasPermission else { return }
+        Task { _ = try? await cache.shareableContent() }
+    }
+
     /// Captures `rect` (AppKit global coordinates) from `screen`, leaving ScreenLocalizer's own windows out.
     static func capture(rect: NSRect, on screen: NSScreen) async throws -> CGImage {
         guard hasPermission else {
             CGRequestScreenCaptureAccess()
             throw ScreenOCRError.permission
         }
+        return try await captureAttempt(rect: rect, on: screen, forceRefresh: false)
+    }
+
+    private static func captureAttempt(rect: NSRect, on screen: NSScreen, forceRefresh: Bool) async throws -> CGImage {
         let content: SCShareableContent
         do {
-            content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            content = try await cache.shareableContent(forceRefresh: forceRefresh)
         } catch {
             throw ScreenOCRError.permission
         }
         let displayID = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
         guard let display = content.displays.first(where: { $0.displayID == displayID }) ?? content.displays.first else {
+            if !forceRefresh { return try await captureAttempt(rect: rect, on: screen, forceRefresh: true) }
             throw ScreenOCRError.displayNotFound
         }
         let ownApps = content.applications.filter { $0.processID == getpid() }
@@ -44,7 +82,12 @@ enum ScreenOCR {
         config.width = max(1, Int(local.width * scale))
         config.height = max(1, Int(local.height * scale))
         config.showsCursor = false
-        return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+        do {
+            return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+        } catch {
+            if !forceRefresh { return try await captureAttempt(rect: rect, on: screen, forceRefresh: true) }
+            throw error
+        }
     }
 
     /// On-device text recognition with Apple's Vision framework; keeps line order and paragraph gaps.
@@ -57,27 +100,37 @@ enum ScreenOCR {
             let handler = VNImageRequestHandler(cgImage: image, options: [:])
             try handler.perform([request])
             let observations = (request.results ?? []).filter { $0.topCandidates(1).first != nil }
-            let sorted = observations.sorted {
-                abs($0.boundingBox.midY - $1.boundingBox.midY) < min($0.boundingBox.height, $1.boundingBox.height) * 0.5
-                    ? $0.boundingBox.minX < $1.boundingBox.minX
-                    : $0.boundingBox.midY > $1.boundingBox.midY
+            let byY = observations.sorted { $0.boundingBox.midY > $1.boundingBox.midY }
+            var rows: [[VNRecognizedTextObservation]] = []
+            for obs in byY {
+                if let lastRow = rows.last, let anchor = lastRow.first,
+                   abs(anchor.boundingBox.midY - obs.boundingBox.midY) < min(anchor.boundingBox.height, obs.boundingBox.height) * 0.5 {
+                    rows[rows.count - 1].append(obs)
+                } else {
+                    rows.append([obs])
+                }
             }
             var lines: [String] = []
-            var previous: VNRecognizedTextObservation?
-            for observation in sorted {
-                guard let text = observation.topCandidates(1).first?.string else { continue }
-                if let prev = previous {
-                    let sameLine = abs(prev.boundingBox.midY - observation.boundingBox.midY) < min(prev.boundingBox.height, observation.boundingBox.height) * 0.5
-                    if sameLine {
-                        lines[lines.count - 1] += " " + text
-                        previous = observation
-                        continue
-                    }
-                    let gap = prev.boundingBox.minY - observation.boundingBox.maxY
-                    if gap > prev.boundingBox.height * 0.9 { lines.append("") }
+            var previousRow: [VNRecognizedTextObservation]?
+            for row in rows {
+                let rawStrings = row.compactMap { $0.topCandidates(1).first?.string }
+                guard !rawStrings.isEmpty else { continue }
+                let rtlRow = rawStrings.joined().unicodeScalars.contains { scalar in
+                    (0x0590...0x08FF).contains(scalar.value) ||
+                    (0xFB50...0xFDFF).contains(scalar.value) ||
+                    (0xFE70...0xFEFF).contains(scalar.value)
                 }
-                lines.append(text)
-                previous = observation
+                let ordered = row.sorted {
+                    rtlRow ? $0.boundingBox.maxX > $1.boundingBox.maxX : $0.boundingBox.minX < $1.boundingBox.minX
+                }
+                if let prev = previousRow {
+                    let prevMinY = prev.map(\.boundingBox.minY).min() ?? 0
+                    let prevHeight = prev.map(\.boundingBox.height).max() ?? 0
+                    let currMaxY = ordered.map(\.boundingBox.maxY).max() ?? 0
+                    if prevMinY - currMaxY > prevHeight * 0.9 { lines.append("") }
+                }
+                lines.append(ordered.compactMap { $0.topCandidates(1).first?.string }.joined(separator: " "))
+                previousRow = ordered
             }
             return lines.joined(separator: "\n").trimmed
         }.value

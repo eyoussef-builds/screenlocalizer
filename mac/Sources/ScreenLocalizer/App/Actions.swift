@@ -31,19 +31,28 @@ enum Actions {
         }
         let sourceApp = NSWorkspace.shared.frontmostApplication
         let appName = sourceApp?.processIdentifier == getpid() ? nil : sourceApp?.localizedName
+        ScreenOCR.prewarm()
+        LLMClient.prewarmActiveProvider()
         RegionSelector.shared.begin { rect, screen in
             guard let rect, let screen else { return }
+            // Paint the prewarmed panel immediately (<16ms) while Vision OCR runs in the background.
+            let pending = Session(source: "", origin: .ocr, context: SourceContext(appName: appName, windowTitle: nil), isPreparing: true)
+            PanelController.shared.present(pending, anchor: rect, autoRun: false)
             Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 80_000_000)
                 do {
                     let image = try await ScreenOCR.capture(rect: rect, on: screen)
                     let text = try await ScreenOCR.recognize(image)
+                    guard PanelController.shared.session?.id == pending.id else { return }
                     guard !text.isEmpty else {
+                        PanelController.shared.close()
                         Toast.show(L("No text found in that area."), near: NSPoint(x: rect.midX, y: rect.midY))
                         return
                     }
-                    present(text: text, origin: .ocr, anchor: rect, appName: appName, windowTitle: nil)
+                    pending.finishPreparingAndRun(source: text)
                 } catch {
+                    if PanelController.shared.session?.id == pending.id {
+                        PanelController.shared.close()
+                    }
                     Toast.show(error.localizedDescription)
                     if error is ScreenOCRError { WindowManager.shared.show(.settings, tab: .permissions) }
                 }

@@ -72,6 +72,13 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     private let sizeKey = "panelSize"
 
+    /// Allocates and lays out the floating panel + SwiftUI hosting hierarchy ahead of time so the first shortcut is <16ms.
+    func prewarm() {
+        let panel = ensurePanel()
+        panel.applyCapturePrivacy(hidden: AppSettings.shared.hidePanelFromCapture)
+        panel.contentView?.layoutSubtreeIfNeeded()
+    }
+
     private func ensurePanel() -> FloatingPanel {
         if let panel { return panel }
         let saved = NSSizeFromString(UserDefaults.standard.string(forKey: sizeKey) ?? "")
@@ -150,7 +157,7 @@ struct PanelRootView: View {
 
     var body: some View {
         if let session = state.session {
-            ResultView(session: session).id(session.id)
+            ResultView(session: session)
         } else {
             Color.clear
         }
@@ -166,12 +173,20 @@ final class FloatingButton {
     enum HideReason { case interaction, timeout, used }
 
     private var panel: FloatingPanel?
+    private var cachedSize: NSSize?
     private var text: String?
     private var appName: String?
     private var windowTitle: String?
     private var origin: SourceOrigin = .floating
     private var anchorPoint: NSPoint = .zero
     private var hideWork: DispatchWorkItem?
+
+    func prewarm() {
+        let panel = ensurePanel()
+        panel.applyCapturePrivacy(hidden: AppSettings.shared.hidePanelFromCapture)
+        panel.contentView?.layoutSubtreeIfNeeded()
+        cachedSize = panel.contentView?.fittingSize
+    }
 
     func contains(_ point: NSPoint) -> Bool {
         guard let panel, panel.isVisible else { return false }
@@ -186,10 +201,9 @@ final class FloatingButton {
         self.origin = origin
         self.anchorPoint = point
 
-        let panel = self.panel ?? makePanel()
-        self.panel = panel
-        panel.contentView = FirstMouseHostingView(rootView: FloatingButtonView { [weak self] in self?.activate() })
-        let size = panel.contentView?.fittingSize ?? NSSize(width: 150, height: 34)
+        let panel = ensurePanel()
+        let size = cachedSize ?? panel.contentView?.fittingSize ?? NSSize(width: 150, height: 34)
+        cachedSize = size
         let screen = NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main ?? NSScreen.screens[0]
         let visible = screen.visibleFrame.insetBy(dx: 6, dy: 6)
         var origin = NSPoint(x: point.x + 8, y: point.y + 14)
@@ -200,9 +214,12 @@ final class FloatingButton {
         panel.alphaValue = 0
         panel.orderFrontRegardless()
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
+            context.duration = 0.06
             panel.animator().alphaValue = 1
         }
+
+        // Predictively warm the active AI provider while the user moves the pointer to click.
+        LLMClient.prewarmActiveProvider()
 
         hideWork?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.hide(reason: .timeout) }
@@ -220,9 +237,12 @@ final class FloatingButton {
         panel?.applyCapturePrivacy(hidden: AppSettings.shared.hidePanelFromCapture)
     }
 
-    private func makePanel() -> FloatingPanel {
+    private func ensurePanel() -> FloatingPanel {
+        if let panel { return panel }
         let panel = FloatingPanel(size: NSSize(width: 150, height: 34), titled: false)
         panel.level = .popUpMenu
+        panel.contentView = FirstMouseHostingView(rootView: FloatingButtonView { [weak self] in self?.activate() })
+        self.panel = panel
         return panel
     }
 
@@ -274,17 +294,30 @@ struct FloatingButtonView: View {
 
 // MARK: - Toast
 
+final class ToastState: ObservableObject {
+    @Published var message = ""
+}
+
 @MainActor
 enum Toast {
     private static var panel: FloatingPanel?
+    private static let state = ToastState()
     private static var work: DispatchWorkItem?
 
+    private static func ensurePanel() -> FloatingPanel {
+        if let panel { return panel }
+        let p = FloatingPanel(size: NSSize(width: 200, height: 40), titled: false)
+        p.level = .popUpMenu
+        p.ignoresMouseEvents = true
+        p.contentView = NSHostingView(rootView: ToastView(state: state))
+        panel = p
+        return p
+    }
+
     static func show(_ message: String, near point: NSPoint? = nil) {
-        let panel = self.panel ?? FloatingPanel(size: NSSize(width: 200, height: 40), titled: false)
-        panel.level = .popUpMenu
-        panel.ignoresMouseEvents = true
-        self.panel = panel
-        panel.contentView = NSHostingView(rootView: ToastView(message: message))
+        state.message = message
+        let panel = ensurePanel()
+        panel.contentView?.layoutSubtreeIfNeeded()
         let size = panel.contentView?.fittingSize ?? NSSize(width: 240, height: 44)
         let location = point ?? NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(location) } ?? NSScreen.main ?? NSScreen.screens[0]
@@ -303,9 +336,9 @@ enum Toast {
 }
 
 struct ToastView: View {
-    let message: String
+    @ObservedObject var state: ToastState
     var body: some View {
-        Text(message)
+        Text(state.message)
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.white)
             .multilineTextAlignment(.center)

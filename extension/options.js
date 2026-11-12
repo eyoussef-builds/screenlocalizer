@@ -3,10 +3,13 @@
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
 
+let statusTimer = null;
+
 function setStatus(text, cls) {
+  clearTimeout(statusTimer);
   statusEl.textContent = text;
   statusEl.className = cls || "";
-  if (text) setTimeout(() => { statusEl.textContent = ""; statusEl.className = ""; }, 4000);
+  if (text) statusTimer = setTimeout(() => { statusEl.textContent = ""; statusEl.className = ""; }, 4000);
 }
 
 async function load() {

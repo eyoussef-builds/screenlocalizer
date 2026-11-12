@@ -69,16 +69,75 @@ function buildMessages(mode, text, pageTitle, pageUrl, settings) {
   ];
 }
 
-async function getSettings() {
-  const sync = await chrome.storage.sync.get({
-    targetLanguage: "Arabic",
-    model: DEFAULT_MODEL,
-    customInstructions: "",
-    enabled: true,
-    defaultMode: "translate",
-  });
-  const local = await chrome.storage.local.get({ apiKey: "" });
-  return { ...sync, apiKey: local.apiKey };
+let cachedSettings = null;
+let settingsPromise = null;
+let lastPrewarmAt = 0;
+const resultCache = new Map();
+const RESULT_CACHE_LIMIT = 50;
+
+async function hydrateSettings() {
+  const [sync, local] = await Promise.all([
+    chrome.storage.sync.get({
+      targetLanguage: "Arabic",
+      model: DEFAULT_MODEL,
+      customInstructions: "",
+      enabled: true,
+      defaultMode: "translate",
+    }),
+    chrome.storage.local.get({ apiKey: "" }),
+  ]);
+  cachedSettings = { ...sync, apiKey: local.apiKey };
+  return cachedSettings;
+}
+
+function getSettings() {
+  if (cachedSettings) return Promise.resolve(cachedSettings);
+  if (!settingsPromise) {
+    settingsPromise = hydrateSettings().finally(() => { settingsPromise = null; });
+  }
+  return settingsPromise;
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (!cachedSettings) return;
+  if (area === "sync") {
+    for (const [k, v] of Object.entries(changes)) {
+      cachedSettings[k] = v.newValue;
+    }
+  } else if (area === "local" && changes.apiKey) {
+    cachedSettings.apiKey = changes.apiKey.newValue || "";
+  }
+});
+
+async function prewarmOpenAI() {
+  const now = Date.now();
+  if (now - lastPrewarmAt < 45_000) return;
+  const settings = await getSettings();
+  if (!settings.apiKey) return;
+  lastPrewarmAt = now;
+  fetch("https://api.openai.com/v1/models", {
+    method: "HEAD",
+    headers: { Authorization: `Bearer ${settings.apiKey}` },
+  }).catch(() => {});
+}
+
+function getCachedResult(key) {
+  if (!resultCache.has(key)) return null;
+  const val = resultCache.get(key);
+  // Refresh LRU order.
+  resultCache.delete(key);
+  resultCache.set(key, val);
+  return val;
+}
+
+function setCachedResult(key, val) {
+  if (!val) return;
+  if (resultCache.has(key)) resultCache.delete(key);
+  resultCache.set(key, val);
+  if (resultCache.size > RESULT_CACHE_LIMIT) {
+    const oldest = resultCache.keys().next().value;
+    resultCache.delete(oldest);
+  }
 }
 
 function friendlyError(status, body) {
@@ -96,7 +155,7 @@ function friendlyError(status, body) {
 }
 
 async function streamCompletion(port, request, signal) {
-  const { mode, text, pageTitle, pageUrl, requestId } = request;
+  const { mode, text, pageTitle, pageUrl, requestId, force } = request;
   const settings = await getSettings();
 
   if (!settings.apiKey) {
@@ -111,6 +170,16 @@ async function streamCompletion(port, request, signal) {
   }
 
   const model = settings.model || DEFAULT_MODEL;
+  const cacheKey = `${model}|${settings.targetLanguage || "Arabic"}|${mode}|${settings.customInstructions || ""}|${text}`;
+  if (!force) {
+    const cached = getCachedResult(cacheKey);
+    if (cached) {
+      port.postMessage({ type: "delta", requestId, text: cached });
+      port.postMessage({ type: "done", requestId });
+      return;
+    }
+  }
+
   const messages = buildMessages(mode, text, pageTitle, pageUrl, settings);
   const send = (tuned) =>
     fetch(OPENAI_URL, {
@@ -150,26 +219,36 @@ async function streamCompletion(port, request, signal) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let fullOutput = "";
+  const emitLine = (line) => {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data:")) return;
+    const data = trimmed.slice(5).trim();
+    if (data === "[DONE]") return;
+    try {
+      const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
+      if (delta) {
+        fullOutput += delta;
+        port.postMessage({ type: "delta", requestId, text: delta });
+      }
+    } catch (_) {
+      // ignore malformed chunks
+    }
+  };
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        buffer += decoder.decode();
+        if (buffer.trim()) emitLine(buffer);
+        break;
+      }
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
       buffer = lines.pop(); // keep incomplete line in buffer
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith("data:")) continue;
-        const data = trimmed.slice(5).trim();
-        if (data === "[DONE]") continue;
-        try {
-          const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
-          if (delta) port.postMessage({ type: "delta", requestId, text: delta });
-        } catch (_) {
-          // ignore malformed chunks
-        }
-      }
+      for (const line of lines) emitLine(line);
     }
+    setCachedResult(cacheKey, fullOutput);
     port.postMessage({ type: "done", requestId });
   } catch (e) {
     if (e.name !== "AbortError") {
@@ -187,6 +266,10 @@ chrome.runtime.onConnect.addListener((port) => {
   let controller = null;
 
   port.onMessage.addListener((msg) => {
+    if (msg.type === "warmup") {
+      prewarmOpenAI().catch(() => {});
+      return;
+    }
     if (msg.type === "generate") {
       if (controller) controller.abort();
       controller = new AbortController();
@@ -225,10 +308,12 @@ function openPanelInTab(tab) {
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
-  chrome.contextMenus.create({
-    id: "screenlocalizer-open",
-    title: "ScreenLocalizer: ترجم أو اشرح «%s»",
-    contexts: ["selection"],
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "screenlocalizer-open",
+      title: "ScreenLocalizer: ترجم أو اشرح «%s»",
+      contexts: ["selection"],
+    });
   });
   if (details.reason === "install") {
     chrome.runtime.openOptionsPage();

@@ -52,10 +52,27 @@ final class AppSettings: ObservableObject {
         defaultMode = Mode(rawValue: d.string(forKey: "defaultMode") ?? "") ?? .translate
         customInstructions = d.string(forKey: "customInstructions") ?? ""
 
-        let provider = d.string(forKey: "providerID") ?? "openai"
+        let savedProvider = d.string(forKey: "providerID")
+        let hasOpenAIKey = !(Keychain.get("openai") ?? "").isEmpty
+        let hasCodex = ChatGPTAccountClient.findBinary() != nil
+        let hasClaude = ClaudeAccountClient.findBinary() != nil
+        let preferredSubscriptionProvider: String? = hasCodex
+            ? Providers.chatGPTAccountID
+            : (hasClaude ? Providers.claudeAccountID : nil)
+        let shouldDefaultToSubscription = (savedProvider == nil && !hasOpenAIKey)
+            || (savedProvider == "openai" && !hasOpenAIKey && preferredSubscriptionProvider != nil && !d.bool(forKey: "chatGPTAccountMigrated"))
+        let provider = shouldDefaultToSubscription
+            ? (preferredSubscriptionProvider ?? Providers.chatGPTAccountID)
+            : (savedProvider ?? "openai")
+        if shouldDefaultToSubscription {
+            d.set(true, forKey: "chatGPTAccountMigrated")
+            d.set(provider, forKey: "providerID")
+        }
         providerID = provider
-        baseURL = d.string(forKey: "baseURL") ?? Providers.preset(provider).baseURL
-        model = d.string(forKey: "model") ?? Providers.preset(provider).defaultModel
+        baseURL = shouldDefaultToSubscription ? "" : (d.string(forKey: "baseURL") ?? Providers.preset(provider).baseURL)
+        model = shouldDefaultToSubscription
+            ? Providers.preset(provider).defaultModel
+            : (d.string(forKey: "model") ?? Providers.preset(provider).defaultModel)
 
         floatingButtonEnabled = d.object(forKey: "floatingButtonEnabled") as? Bool ?? true
         clipboardAction = ClipboardAction(rawValue: d.string(forKey: "clipboardAction") ?? "") ?? .off
@@ -64,7 +81,11 @@ final class AppSettings: ObservableObject {
         panelFontSize = d.object(forKey: "panelFontSize") as? Double ?? 16
         historyEnabled = d.object(forKey: "historyEnabled") as? Bool ?? true
 
-        ttsEngine = TTSEngine(rawValue: d.string(forKey: "ttsEngine") ?? "") ?? (provider == "openai" ? .openai : .system)
+        if shouldDefaultToSubscription && !hasOpenAIKey {
+            ttsEngine = .system
+        } else {
+            ttsEngine = TTSEngine(rawValue: d.string(forKey: "ttsEngine") ?? "") ?? (provider == "openai" ? .openai : .system)
+        }
         openAIVoice = d.string(forKey: "openAIVoice") ?? "alloy"
         systemVoiceID = d.string(forKey: "systemVoiceID") ?? ""
 
@@ -88,15 +109,39 @@ final class AppSettings: ObservableObject {
         objectWillChange.send()
     }
 
+    @MainActor
     func selectProvider(_ id: String) {
         let preset = Providers.preset(id)
         providerID = id
+        if id == Providers.chatGPTAccountID {
+            baseURL = ""
+            let known = ChatGPTAuthStore.shared.availableModels
+            model = known.isEmpty ? preset.defaultModel : Providers.bestModel(from: known, provider: preset, current: model)
+            if speechConfig == nil { ttsEngine = .system }
+            Task {
+                await ChatGPTAuthStore.shared.refresh()
+                LLMClient.prewarmActiveProvider()
+            }
+            return
+        }
+        if id == Providers.claudeAccountID {
+            baseURL = ""
+            let known = ClaudeAuthStore.shared.availableModels
+            model = Providers.bestModel(from: known, provider: preset, current: model)
+            if speechConfig == nil { ttsEngine = .system }
+            Task {
+                await ClaudeAuthStore.shared.refresh()
+                LLMClient.prewarmActiveProvider()
+            }
+            return
+        }
         if !preset.baseURL.isEmpty || id == "custom" { baseURL = preset.baseURL }
         if !preset.defaultModel.isEmpty { model = preset.defaultModel }
+        LLMClient.prewarmActiveProvider()
     }
 
     var llmConfig: LLMConfig {
-        LLMConfig(baseURL: baseURL, apiKey: apiKey, model: model, requiresKey: provider.needsKey)
+        LLMConfig(providerID: providerID, baseURL: baseURL, apiKey: apiKey, model: model, requiresKey: provider.needsKey)
     }
 
     /// OpenAI credentials for text-to-speech, which only OpenAI provides.

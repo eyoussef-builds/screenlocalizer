@@ -86,7 +86,7 @@ private struct AISettings: View {
             } header: {
                 Text("AI provider")
             } footer: {
-                Text("Works with OpenAI and any OpenAI-compatible API (OpenRouter, Groq, Ollama, LM Studio…). Keys are stored in your macOS Keychain and sent only to the provider you choose.")
+                Text("Use your ChatGPT or Claude account without an API key, or connect OpenAI and any OpenAI-compatible API (OpenRouter, Groq, Ollama, LM Studio…). Keys are stored in your macOS Keychain.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

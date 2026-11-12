@@ -62,7 +62,7 @@ Results can be in **Arabic or almost any other language** — you choose.
 | **Works in** | Web pages in Chrome or Microsoft Edge (Windows, Mac, Linux) | **Every app** on your Mac: browsers, PDFs, Notes, Slack, Telegram… and text inside images or videos |
 | **How you start it** | Select text → purple button | Select text → shortcut `⌃⌥T`, floating button, screen box `⌃⌥O`, or paste box `⌃⌥V` |
 | **Extras** | — | Hidden-from-recording panel, follow-up chat, read aloud, history & export, glossary, video script, social post |
-| **AI services** | OpenAI | OpenAI or any OpenAI-compatible service (OpenRouter, Groq, Ollama…) |
+| **AI services** | OpenAI (API key) | **ChatGPT Account** or **Claude Account** (no API key), or OpenAI / OpenRouter / Groq / Ollama / LM Studio |
 | **Needs** | Chrome or Edge | A Mac with an Apple chip (M1 or newer) and macOS 14 Sonoma or newer |
 
 Both are **free for personal use** (see [License](#-license)).
@@ -80,19 +80,40 @@ All versions and release notes: [Releases page](https://github.com/eyoussef-buil
 
 ---
 
-## 🔑 Before you start: get your AI key (about 5 minutes)
+## 🔑 Before you start: connect your AI (personal account or API key)
 
-**The simple idea:** ScreenLocalizer doesn't have its own brain. It *borrows* one from an AI company
-— by default **OpenAI**, the company that makes ChatGPT. To borrow it, you need a **key**: a long
-secret password that starts with `sk-`. OpenAI then charges you a tiny amount for what you use.
+**The simple idea:** ScreenLocalizer doesn't have its own brain — it *borrows* one from the AI
+service you choose. You have **two ways** to connect it:
+
+### Option A — Mac app: sign in with your ChatGPT or Claude account (no API key needed)
+
+If you use the **Mac app** and already have a **ChatGPT** or **Claude** subscription, you don't
+need to create an API key or add developer credit:
+
+- **ChatGPT Account:** Install the official [ChatGPT app for macOS](https://openai.com/chatgpt/mac/)
+  (or the official Codex CLI), then choose **ChatGPT Account** in ScreenLocalizer and click
+  **Sign in with ChatGPT**.
+- **Claude Account:** Install Anthropic's official
+  [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code/overview), then choose
+  **Claude Account** in ScreenLocalizer and click **Sign in with Claude**.
+
+Each person signs in locally on their own Mac — no personal account is ever stored inside the app
+download or project files.
+
+### Option B — Browser extension (or API key mode in the Mac app): get an OpenAI API key (~5 minutes)
+
+The **browser extension** (and optional API-key providers in the Mac app) uses an **API key**: a
+long secret password that starts with `sk-`. OpenAI charges a tiny pay-as-you-go amount for what you
+use.
 
 > 💰 **How much?** Translating or explaining a paragraph usually costs **less than one cent**.
 > Adding $5 of credit lasts most people a long time.
 >
-> ⚠️ **ChatGPT Plus is not the same thing.** A ChatGPT subscription does *not* include API
-> credit — the key needs its own small balance.
+> ⚠️ **For the browser extension:** ChatGPT subscriptions do *not* include OpenAI API credit — an
+> `sk-…` API key needs its own small balance at `platform.openai.com` (whereas the **Mac app** lets
+> you sign in directly with Option A above).
 
-**Step by step:**
+**Step by step (for an OpenAI API key):**
 
 1. Go to **<https://platform.openai.com>** and sign up or log in (you can use the same account as ChatGPT).
 2. Open **Settings → Billing** and add a payment method and a small amount of credit (for example $5).
@@ -238,8 +259,9 @@ panel to switch it to **Visible** when you *want* viewers to see it.
 - **Screen box:** the area you draw is captured with ScreenCaptureKit (ScreenLocalizer's own windows
   are left out) and read **on your Mac** by Apple's Vision text recognition. Only the recognized
   text goes to the AI; the image is never saved or uploaded.
-- **AI:** the text plus instructions for the chosen mode are streamed from an OpenAI-compatible
-  Chat Completions API. Your key is kept in the **macOS Keychain**.
+- **AI:** answers stream either through your signed-in **ChatGPT Account** (via OpenAI's official
+  `codex app-server`), your signed-in **Claude Account** (via Anthropic's official `claude` CLI), or
+  an OpenAI-compatible Chat Completions API whose key is kept in the **macOS Keychain**.
 - **Private mode:** the panel is marked as excluded from screen capture by macOS.
 - **History** is a file on your Mac; nothing is synced anywhere.
 
@@ -276,9 +298,17 @@ then **Continue**.
 
 <p align="center"><img src="docs/images/mac-onboarding-2.png" alt="Choose the result language" width="60%"></p>
 
-**3. Connect your AI.** Leave **Provider** on **OpenAI**. Paste your key into **API key**, click
-**Save Key**, then **Test Connection**. When you see **✓ Connected**, click **Continue**.
-(The app picks a good model automatically; `gpt-5-mini` is a great default.)
+**3. Connect your AI.** Pick how you'd like to connect:
+
+- **ChatGPT Account (no API key):** Choose **ChatGPT Account** and click **Sign in with ChatGPT**
+  (if you're already signed in inside the official ChatGPT Mac app, it connects automatically).
+- **Claude Account (no API key):** Choose **Claude Account** and click **Sign in with Claude** to
+  sign in in your browser.
+- **API key or local model:** Choose **OpenAI** (or OpenRouter, Groq, Ollama, LM Studio), paste your
+  key into **API key**, and click **Save Key**.
+
+Click **Test Connection** — when you see **✓ Connected**, click **Continue**. (The app picks a fast
+default model automatically.)
 
 <p align="center"><img src="docs/images/mac-onboarding-3.png" alt="Connect your AI provider" width="60%"></p>
 
@@ -325,14 +355,15 @@ sentence — even in this page — and press **⌃⌥T**.
 | **Regenerate** | Get a fresh answer |
 | **Read Aloud** | Listen to the answer (press again to stop) |
 
-You can **drag** the panel by its top area and **resize** it from its edges. While it's open, new answers appear in the same place.
+You can **drag** the panel by its top area and **resize** it from its edges. The bottom bar also shows your active provider and model (for example `ChatGPT Account · gpt-6.1-terra` or `Claude Account · sonnet`). While it's open, new answers appear in the same place.
 
 <p align="center"><img src="docs/images/mac-panel-post.png" alt="Social Post mode" width="46%"></p>
 
 #### The menu bar icon
 
 Click the speech-bubble icon in the menu bar for: **Translate Selection**, **Capture Text from
-Screen…**, **Paste Box**, **Show Last Result**, **Default Mode**, turning the **floating button** on or
+Screen…**, **Paste Box**, **Show Last Result**, **Default Mode**, **AI Provider** (one-click switch
+between ChatGPT Account, Claude Account, OpenAI, Ollama and more), turning the **floating button** on or
 off, **Hide Panel from Screen Recordings**, **History…**, **Settings…** and **Check for Updates…**.
 
 #### History
@@ -350,7 +381,7 @@ Menu bar icon → **Settings…**
 | Tab | What you can change |
 |---|---|
 | **General** | Answer language, default mode, custom instructions, panel privacy default, text size, history on/off, interface language (English / العربية), open at login |
-| **AI** | Provider (OpenAI, OpenRouter, Groq, Ollama, LM Studio, Custom), base URL, API key, model, test connection |
+| **AI** | Provider (**ChatGPT Account**, **Claude Account**, OpenAI, OpenRouter, Groq, Ollama, LM Studio, Custom), account sign-in/sign-out, base URL, API key, model, test connection |
 | **Triggers** | Change the three shortcuts, turn the floating button on/off, choose what happens when you copy text |
 | **Glossary** | Your own word list, e.g. `agent → وكيل ذكي`, so every answer uses the same terms |
 | **Voice** | Read aloud with free built-in macOS voices or natural OpenAI voices |
@@ -386,8 +417,11 @@ Interface language**.
 ## 🔒 Privacy in one minute
 
 - **No account, no tracking, no analytics, no ads, no ScreenLocalizer server.**
-- Text is sent **only when you ask**, and **only to the AI service you chose** (OpenAI by default).
-- Your **key stays on your device** (browser storage or the macOS Keychain).
+- Text is sent **only when you ask**, and **only to the AI service you chose** (your signed-in
+  ChatGPT or Claude account, or your chosen API provider).
+- **ChatGPT & Claude sign-ins** run locally on your Mac through OpenAI's and Anthropic's official
+  tools — no personal credentials are ever embedded in the app or project files.
+- Your **API key stays on your device** (browser storage or the macOS Keychain).
 - Screen reading (OCR) happens **on your Mac**. History stays **on your Mac**.
 
 Full details: [PRIVACY.md](PRIVACY.md).
@@ -399,15 +433,19 @@ Full details: [PRIVACY.md](PRIVACY.md).
 <details>
 <summary><b>Is ScreenLocalizer free?</b></summary>
 
-Yes — the software is free for personal, non-commercial use. You only pay OpenAI (or your chosen AI
-service) for what you use, usually less than a cent per paragraph.
+Yes — the software is free for personal, non-commercial use. You either sign in with your existing
+ChatGPT or Claude subscription in the Mac app, or pay your chosen API provider for what you use
+(usually less than a cent per paragraph).
 </details>
 
 <details>
-<summary><b>I pay for ChatGPT Plus. Do I still need a key?</b></summary>
+<summary><b>I pay for ChatGPT Plus or Claude Pro. Do I still need an API key?</b></summary>
 
-Yes. ChatGPT subscriptions and the OpenAI API are billed separately. Add a small credit balance at
-<https://platform.openai.com> → Settings → Billing.
+- **In the Mac app: No!** Choose **ChatGPT Account** or **Claude Account** in **Settings → AI** (or
+  during first-time setup) and sign in with your personal subscription directly — no API key or
+  extra balance needed.
+- **In the browser extension: Yes.** The browser extension connects directly to the OpenAI API,
+  which is billed separately from ChatGPT Plus (<https://platform.openai.com> → Settings → Billing).
 </details>
 
 <details>
@@ -433,9 +471,10 @@ The ready-made download is for Apple-chip Macs. You can still use the **browser 
 <details>
 <summary><b>Can I use other AI services, or a free local model?</b></summary>
 
-In the **Mac app**, yes: Settings → AI → Provider. Choose **OpenRouter**, **Groq**, **Ollama (local)**,
-**LM Studio (local)** or **Custom** for any OpenAI-compatible service. Local models run on your Mac,
-for free, without internet. The **extension** currently supports OpenAI only.
+In the **Mac app**, yes: **Settings → AI → Provider** (or the menu-bar **AI Provider** submenu).
+Choose **ChatGPT Account**, **Claude Account**, **OpenAI**, **OpenRouter**, **Groq**, **Ollama
+(local)**, **LM Studio (local)** or **Custom** for any OpenAI-compatible service. Local models run
+on your Mac, for free, without internet. The **extension** currently supports OpenAI only.
 </details>
 
 <details>
@@ -522,9 +561,10 @@ scripts/package-extension.sh          # → dist/ScreenLocalizer-extension.zip
 
 # Mac app (Command Line Tools are enough; Xcode is optional):
 mac/scripts/build-app.sh              # → mac/build/ScreenLocalizer.app
+mac/scripts/build-app.sh --install    # build, install to /Applications & launch
 mac/scripts/package-dmg.sh            # → mac/build/ScreenLocalizer-mac.dmg
-python3 mac/scripts/check-strings.py  # every interface string translated into Arabic?
-python3 mac/scripts/mock-openai.py    # fake AI server for testing without a key
+python3 -I mac/scripts/check-strings.py # every interface string translated into Arabic?
+python3 -I mac/scripts/mock-openai.py # fake AI server for testing without a key
 ```
 
 Pushing a tag like `v1.1.0` builds both downloads and attaches them to a GitHub release.

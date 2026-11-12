@@ -1,6 +1,6 @@
 # Privacy Policy · سياسة الخصوصية
 
-_ScreenLocalizer browser extension and Mac app · Last updated: 2026-10-21_
+_ScreenLocalizer browser extension and Mac app · Last updated: 2026-11-12_
 
 ## English
 
@@ -11,12 +11,14 @@ no account system, no analytics, no ads and no tracking.
 
 When you trigger ScreenLocalizer (button, shortcut, right-click menu, screen capture, paste box or
 the optional "when I copy text" setting), the text you chose is sent **directly from your device to
-the AI provider you configured** — OpenAI by default — to produce the translation or explanation.
-To help the AI, the request can include the name of the app and the window or page title the text
-came from. The extension also includes the page address (URL).
+the AI provider you configured** — such as your signed-in **ChatGPT** or **Claude** account on the
+Mac app, or **OpenAI** (or another compatible provider) via API key — to produce the translation or
+explanation. To help the AI, the request can include the name of the app and the window or page
+title the text came from. The extension also includes the page address (URL).
 
 - Your use of that provider is governed by **its** privacy policy
-  (for OpenAI: <https://openai.com/policies/privacy-policy>).
+  (for OpenAI: <https://openai.com/policies/privacy-policy>;
+  for Anthropic / Claude: <https://www.anthropic.com/legal/privacy>).
 - If you turn on **"Translate immediately"** for copied text in the Mac app, everything you copy is
   sent to the provider. It is off by default.
 - **Read aloud** with the OpenAI voice sends the result text to OpenAI's speech service; the macOS
@@ -24,8 +26,12 @@ came from. The extension also includes the page address (URL).
 
 ### What stays on your device
 
-- **Your API key** — in the browser's local extension storage (extension) or the macOS Keychain
-  (Mac app). It is only ever sent to the provider you chose.
+- **ChatGPT & Claude account sign-in (Mac app)** — handled locally on your Mac through OpenAI's
+  official `codex app-server` and Anthropic's official `claude` CLI. ScreenLocalizer never reads,
+  copies or uploads OAuth token files, and never embeds any personal account inside the app or
+  project files.
+- **Your API key** — in the browser's local extension storage (`chrome.storage.local` in the
+  extension) or the macOS Keychain (Mac app). It is only ever sent to the provider you chose.
 - **Settings and glossary** — in browser/app preferences on your device.
 - **History** (Mac app) — `~/Library/Application Support/ScreenLocalizer/history.json`. You can turn
   it off, delete items or clear it in the History window.
@@ -55,18 +61,22 @@ Questions: **hello@eyoussef.me** · <https://eyoussef.me>
 ### ما الذي يخرج من جهازك؟ (فقط عندما تطلب أنت)
 
 عندما تستخدم ScreenLocalizer (الزر، أو الاختصار، أو قائمة الزر الأيمن، أو التقاط الشاشة، أو صندوق اللصق، أو
-خيار «عند نسخ نص»)، يُرسَل النص الذي اخترته **مباشرةً من جهازك إلى مزوّد الذكاء الاصطناعي الذي اخترته** — وهو
-OpenAI افتراضيًا — للحصول على الترجمة أو الشرح. وقد يتضمن الطلب اسم التطبيق وعنوان النافذة أو الصفحة التي جاء
-منها النص لمساعدة الذكاء الاصطناعي على الفهم، وتضيف الإضافة رابط الصفحة أيضًا.
+خيار «عند نسخ نص»)، يُرسَل النص الذي اخترته **مباشرةً من جهازك إلى مزوّد الذكاء الاصطناعي الذي اخترته** — سواء
+حسابك الشخصي في **ChatGPT** أو **Claude** على تطبيق الماك، أو **OpenAI** (أو أي مزوّد متوافق) عبر مفتاح API —
+للحصول على الترجمة أو الشرح. وقد يتضمن الطلب اسم التطبيق وعنوان النافذة أو الصفحة التي جاء منها النص لمساعدة
+الذكاء الاصطناعي على الفهم، وتضيف الإضافة رابط الصفحة أيضًا.
 
-- يخضع استخدامك لهذا المزوّد لسياسة الخصوصية **الخاصة به**.
+- يخضع استخدامك لهذا المزوّد لسياسة الخصوصية **الخاصة به** (سياسة OpenAI وAnthropic).
 - إذا فعّلت خيار **«الترجمة فورًا»** للنصوص المنسوخة في تطبيق الماك، فسيُرسَل كل ما تنسخه. هذا الخيار مُطفأ افتراضيًا.
 - **القراءة الصوتية** بصوت OpenAI ترسل النص الناتج إلى خدمة الصوت لديهم، أما صوت macOS فيعمل دون إنترنت.
 
 ### ما الذي يبقى على جهازك؟
 
-- **مفتاح API الخاص بك** — في تخزين المتصفح المحلي (الإضافة) أو في سلسلة مفاتيح macOS (تطبيق الماك)، ولا يُرسَل
-  إلا إلى المزوّد الذي اخترته.
+- **تسجيل الدخول بحساب ChatGPT أو Claude (تطبيق الماك)** — يتم محليًا على جهازك عبر الأدوات الرسمية لـ OpenAI
+  (`codex app-server`) وAnthropic (`claude` CLI). لا يقرأ ScreenLocalizer ملفات رموز الدخول ولا ينسخها ولا يُضمّن
+  أي حساب شخصي داخل التطبيق أو ملفات المشروع.
+- **مفتاح API الخاص بك** — في تخزين المتصفح المحلي على الجهاز (`chrome.storage.local` في الإضافة) أو في سلسلة
+  مفاتيح macOS (تطبيق الماك)، ولا يُرسَل إلا إلى المزوّد الذي اخترته.
 - **الإعدادات والمصطلحات** — في تفضيلات المتصفح أو التطبيق على جهازك.
 - **السجل** (تطبيق الماك) — داخل مجلد التطبيق على جهازك، ويمكنك إيقافه أو حذف عناصره في أي وقت.
 - **التقاط النص من الشاشة (OCR)** — تُقرأ صورة المنطقة التي تحددها على جهازك بواسطة تقنية Vision من Apple، ولا

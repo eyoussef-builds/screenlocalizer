@@ -20,9 +20,12 @@ enum AX {
 
     static let systemWide: AXUIElement = {
         let element = AXUIElementCreateSystemWide()
-        AXUIElementSetMessagingTimeout(element, 0.4)
+        AXUIElementSetMessagingTimeout(element, 0.15)
         return element
     }()
+
+    private static let pidLock = NSLock()
+    private static var manualAXEnabledPIDs: Set<pid_t> = []
 
     static func value(_ element: AXUIElement, _ attribute: String) -> AnyObject? {
         var value: AnyObject?
@@ -30,9 +33,13 @@ enum AX {
         return value
     }
 
+    static func elementValue(_ element: AXUIElement, _ attribute: String) -> AXUIElement? {
+        guard let val = value(element, attribute), CFGetTypeID(val) == AXUIElementGetTypeID() else { return nil }
+        return unsafeBitCast(val, to: AXUIElement.self)
+    }
+
     static func focusedElement() -> AXUIElement? {
-        guard let value = value(systemWide, kAXFocusedUIElementAttribute) else { return nil }
-        return (value as! AXUIElement)
+        elementValue(systemWide, kAXFocusedUIElementAttribute)
     }
 
     static func role(_ element: AXUIElement) -> String? {
@@ -55,24 +62,38 @@ enum AX {
         guard let rangeValue = value(element, kAXSelectedTextRangeAttribute) else { return nil }
         var bounds: AnyObject?
         guard AXUIElementCopyParameterizedAttributeValue(element, kAXBoundsForRangeParameterizedAttribute as CFString,
-                                                         rangeValue, &bounds) == .success, let bounds else { return nil }
+                                                         rangeValue, &bounds) == .success,
+              let bounds, CFGetTypeID(bounds) == AXValueGetTypeID() else { return nil }
+        let axValue = unsafeBitCast(bounds, to: AXValue.self)
         var rect = CGRect.zero
-        guard AXValueGetValue(bounds as! AXValue, .cgRect, &rect), rect.width > 0 || rect.height > 0 else { return nil }
+        guard AXValueGetValue(axValue, .cgRect, &rect), rect.width > 0 || rect.height > 0 else { return nil }
         return fromAX(rect)
     }
 
     static func windowTitle(pid: pid_t) -> String? {
         let app = AXUIElementCreateApplication(pid)
-        AXUIElementSetMessagingTimeout(app, 0.4)
-        guard let window = value(app, kAXFocusedWindowAttribute) else { return nil }
-        return value(window as! AXUIElement, kAXTitleAttribute) as? String
+        AXUIElementSetMessagingTimeout(app, 0.12)
+        guard let window = elementValue(app, kAXFocusedWindowAttribute) else { return nil }
+        return value(window, kAXTitleAttribute) as? String
     }
 
     /// Chromium and Electron apps (Edge, Chrome, Slack, VS Code…) only build their accessibility tree when asked.
+    /// Tracks enabled PIDs so repeated shortcuts never pay synchronous IPC overhead twice for the same process.
     static func enableManualAccessibility(pid: pid_t) {
+        guard pid != getpid() else { return }
+        pidLock.lock()
+        let inserted = manualAXEnabledPIDs.insert(pid).inserted
+        pidLock.unlock()
+        guard inserted else { return }
         let app = AXUIElementCreateApplication(pid)
-        AXUIElementSetMessagingTimeout(app, 0.3)
+        AXUIElementSetMessagingTimeout(app, 0.15)
         AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+    }
+
+    static func forgetProcess(pid: pid_t) {
+        pidLock.lock()
+        _ = manualAXEnabledPIDs.remove(pid)
+        pidLock.unlock()
     }
 
     private static var primaryHeight: CGFloat { NSScreen.screens.first?.frame.height ?? 0 }
@@ -93,9 +114,9 @@ enum SelectionReader {
         let frontmost = NSWorkspace.shared.frontmostApplication
         let appName = frontmost?.localizedName
         let pid = frontmost?.processIdentifier
-        if let pid { AX.enableManualAccessibility(pid: pid) }
 
         let fromAX: (String?, NSRect?, String?) = await Task.detached(priority: .userInitiated) {
+            if let pid { AX.enableManualAccessibility(pid: pid) }
             var text: String?
             var rect: NSRect?
             if let element = AX.focusedElement() {
@@ -113,39 +134,40 @@ enum SelectionReader {
         return CapturedText(text: copied.trimmed, anchor: nil, appName: appName, windowTitle: fromAX.2)
     }
 
-    /// Sends ⌘C to the frontmost app, reads the clipboard, then restores what was there before.
+    /// Sends ⌘C to the frontmost app using an isolated event source, reads the clipboard at 5ms resolution,
+    /// and restores the previous pasteboard asynchronously so the UI never waits on restoration.
     @MainActor
     static func copySelection() async -> String? {
-        // Wait (briefly) for the user to release the shortcut's modifier keys so they don't mix into ⌘C.
-        for _ in 0..<40 {
-            let held = NSEvent.modifierFlags.intersection([.command, .option, .control, .shift])
-            if held.isEmpty { break }
-            try? await Task.sleep(nanoseconds: 25_000_000)
-        }
-
         let pasteboard = NSPasteboard.general
         let saved = savePasteboard(pasteboard)
         let before = pasteboard.changeCount
+        ClipboardWatcher.shared.suppressTemporarily(for: 0.35)
         postCommandC()
 
         var copied: String?
-        for _ in 0..<30 {
-            try? await Task.sleep(nanoseconds: 20_000_000)
+        for _ in 0..<36 {
+            try? await Task.sleep(nanoseconds: 5_000_000)
             if pasteboard.changeCount != before {
-                try? await Task.sleep(nanoseconds: 30_000_000)
                 copied = pasteboard.string(forType: .string)
+                if copied == nil {
+                    try? await Task.sleep(nanoseconds: 8_000_000)
+                    copied = pasteboard.string(forType: .string)
+                }
                 break
             }
         }
         if pasteboard.changeCount != before {
-            restorePasteboard(pasteboard, saved)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                restorePasteboard(pasteboard, saved)
+                ClipboardWatcher.shared.markOwnChange()
+            }
         }
         ClipboardWatcher.shared.markOwnChange()
         return copied
     }
 
     private static func postCommandC() {
-        let source = CGEventSource(stateID: .combinedSessionState)
+        let source = CGEventSource(stateID: .privateState)
         let keyC = CGKeyCode(8)
         let down = CGEvent(keyboardEventSource: source, virtualKey: keyC, keyDown: true)
         let up = CGEvent(keyboardEventSource: source, virtualKey: keyC, keyDown: false)
@@ -156,9 +178,12 @@ enum SelectionReader {
     }
 
     private static func savePasteboard(_ pasteboard: NSPasteboard) -> [[NSPasteboard.PasteboardType: Data]] {
-        (pasteboard.pasteboardItems ?? []).map { item in
+        let maxItemBytes = 10_000_000
+        return (pasteboard.pasteboardItems ?? []).map { item in
             var dict: [NSPasteboard.PasteboardType: Data] = [:]
-            for type in item.types { if let data = item.data(forType: type) { dict[type] = data } }
+            for type in item.types {
+                if let data = item.data(forType: type), data.count <= maxItemBytes { dict[type] = data }
+            }
             return dict
         }
     }

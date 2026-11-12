@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import Combine
 
 /// Target-language picker with a free-text "Other…" option.
 struct LanguagePicker: View {
@@ -32,15 +33,31 @@ struct LanguagePicker: View {
     }
 }
 
-/// Provider, base URL, API key, model and connection test — used by onboarding and Settings.
+/// Provider, ChatGPT / Claude account / API key, model and connection test — used by onboarding and Settings.
 struct AISetupSection: View {
     @ObservedObject var settings = AppSettings.shared
+    @ObservedObject var chatGPTAuth = ChatGPTAuthStore.shared
+    @ObservedObject var claudeAuth = ClaudeAuthStore.shared
     @State private var keyDraft = ""
     @State private var showKey = false
     @State private var models: [String] = []
     @State private var testState: TestState = .idle
 
     enum TestState: Equatable { case idle, testing, ok(Int), failed(String) }
+
+    private var isChatGPTAccount: Bool { settings.providerID == Providers.chatGPTAccountID }
+    private var isClaudeAccount: Bool { settings.providerID == Providers.claudeAccountID }
+    private var isSubscriptionAccount: Bool { isChatGPTAccount || isClaudeAccount }
+    private var displayedModels: [String] {
+        if isChatGPTAccount { return models.isEmpty ? chatGPTAuth.availableModels : models }
+        if isClaudeAccount { return models.isEmpty ? claudeAuth.availableModels : models }
+        return models
+    }
+    private var modelPrompt: String {
+        if isChatGPTAccount { return "gpt-6.1-terra" }
+        if isClaudeAccount { return "sonnet" }
+        return "gpt-5-mini"
+    }
 
     var body: some View {
         Picker(L("Provider"), selection: Binding(get: { settings.providerID }, set: { id in
@@ -52,6 +69,228 @@ struct AISetupSection: View {
             ForEach(Providers.all) { Text($0.name).tag($0.id) }
         }
 
+        if isChatGPTAccount {
+            chatGPTAccountView
+        } else if isClaudeAccount {
+            claudeAccountView
+        } else {
+            apiKeyProviderView
+        }
+
+        LabeledContent(L("Model")) {
+            HStack {
+                TextField("", text: $settings.model, prompt: Text(verbatim: modelPrompt))
+                    .labelsHidden()
+                    .font(.system(.body, design: .monospaced))
+                    .environment(\.layoutDirection, .leftToRight)
+                    .frame(minWidth: 180)
+                if !displayedModels.isEmpty {
+                    Menu(L("Choose")) {
+                        ForEach(displayedModels, id: \.self) { model in
+                            Button(model) { settings.model = model }
+                        }
+                    }
+                    .fixedSize()
+                }
+            }
+        }
+
+        HStack(spacing: 10) {
+            Button {
+                Task { await test() }
+            } label: {
+                Label(L("Test Connection"), systemImage: "bolt.horizontal.circle")
+            }
+            .disabled(testState == .testing)
+            switch testState {
+            case .idle: EmptyView()
+            case .testing: ProgressView().controlSize(.small)
+            case .ok(let count):
+                Label(count > 0 ? LF("Connected · %d models available", count) : L("Connected"), systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green).font(.callout)
+            case .failed(let message):
+                Label(message, systemImage: "xmark.octagon.fill")
+                    .foregroundStyle(.red).font(.callout).lineLimit(3).textSelection(.enabled)
+            }
+        }
+        .onAppear {
+            keyDraft = settings.apiKey ?? ""
+            if isChatGPTAccount {
+                Task { await chatGPTAuth.refresh() }
+            } else if isClaudeAccount {
+                Task { await claudeAuth.refresh() }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var chatGPTAccountView: some View {
+        switch chatGPTAuth.status {
+        case .checking:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Checking ChatGPT account…").foregroundStyle(.secondary)
+            }
+        case .signedIn(let email, let plan, let workspace):
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+                    .font(.system(size: 18))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Signed in with ChatGPT").font(.headline)
+                    let details = [email, workspace, plan?.uppercased()].compactMap { $0?.trimmed }.filter { !$0.isEmpty }
+                    if !details.isEmpty {
+                        Text(verbatim: details.joined(separator: " · "))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .environment(\.layoutDirection, .leftToRight)
+                    }
+                }
+                Spacer()
+                Button(L("Sign Out")) {
+                    Task { await chatGPTAuth.signOut() }
+                }
+            }
+        case .signedOut:
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "person.crop.circle.badge.exclamationmark")
+                    .foregroundStyle(.orange)
+                    .font(.system(size: 18))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sign in with your ChatGPT account — no API key needed.")
+                        .font(.callout)
+                }
+                Spacer()
+                Button(L("Sign in with ChatGPT")) {
+                    Task { await chatGPTAuth.signIn() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        case .signingIn(_, let authURL):
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text("Complete sign-in in your browser…").font(.callout)
+                Spacer()
+                if let authURL {
+                    Link(L("Open Browser ↗"), destination: authURL).font(.callout)
+                }
+                Button(L("Cancel")) {
+                    Task { await chatGPTAuth.cancelSignIn() }
+                }
+            }
+        case .cliMissing:
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    Text("Install the official ChatGPT macOS app or Codex CLI to sign in with your ChatGPT account.")
+                        .font(.callout)
+                    Spacer()
+                    Button(L("Check Again")) {
+                        Task { await chatGPTAuth.refresh() }
+                    }
+                }
+                if let url = URL(string: "https://openai.com/chatgpt/mac/") {
+                    Link(L("Download ChatGPT for macOS ↗"), destination: url).font(.caption)
+                }
+            }
+        case .failed(let message):
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                Text(message).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                Spacer()
+                Button(L("Sign in with ChatGPT")) {
+                    Task { await chatGPTAuth.signIn() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var claudeAccountView: some View {
+        switch claudeAuth.status {
+        case .checking:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Checking Claude account…").foregroundStyle(.secondary)
+            }
+        case .signedIn(let email, let plan, let orgName):
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+                    .font(.system(size: 18))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Signed in with Claude").font(.headline)
+                    let details = [email, orgName, plan?.uppercased()].compactMap { $0?.trimmed }.filter { !$0.isEmpty }
+                    if !details.isEmpty {
+                        Text(verbatim: details.joined(separator: " · "))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .environment(\.layoutDirection, .leftToRight)
+                    }
+                }
+                Spacer()
+                Button(L("Sign Out")) {
+                    Task { await claudeAuth.signOut() }
+                }
+            }
+        case .signedOut:
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "person.crop.circle.badge.exclamationmark")
+                    .foregroundStyle(.orange)
+                    .font(.system(size: 18))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sign in with your Claude account — no API key needed.")
+                        .font(.callout)
+                }
+                Spacer()
+                Button(L("Sign in with Claude")) {
+                    Task { await claudeAuth.signIn() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        case .signingIn(let authURL):
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text("Complete sign-in in your browser…").font(.callout)
+                Spacer()
+                if let authURL {
+                    Link(L("Open Browser ↗"), destination: authURL).font(.callout)
+                }
+                Button(L("Cancel")) {
+                    Task { await claudeAuth.cancelSignIn() }
+                }
+            }
+        case .cliMissing:
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    Text("Install Claude Code CLI to sign in with your Claude account.")
+                        .font(.callout)
+                    Spacer()
+                    Button(L("Check Again")) {
+                        Task { await claudeAuth.refresh() }
+                    }
+                }
+                if let url = URL(string: "https://docs.anthropic.com/en/docs/claude-code/overview") {
+                    Link(L("Install Claude Code CLI ↗"), destination: url).font(.caption)
+                }
+            }
+        case .failed(let message):
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                Text(message).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                Spacer()
+                Button(L("Sign in with Claude")) {
+                    Task { await claudeAuth.signIn() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var apiKeyProviderView: some View {
         LabeledContent(L("API base URL")) {
             TextField("", text: $settings.baseURL, prompt: Text(verbatim: "https://api.openai.com/v1"))
                 .labelsHidden()
@@ -90,44 +329,6 @@ struct AISetupSection: View {
             Text("This provider runs locally or doesn't need a key; leave it empty if so.")
                 .font(.caption).foregroundStyle(.secondary)
         }
-
-        LabeledContent(L("Model")) {
-            HStack {
-                TextField("", text: $settings.model, prompt: Text(verbatim: "gpt-5-mini"))
-                    .labelsHidden()
-                    .font(.system(.body, design: .monospaced))
-                    .environment(\.layoutDirection, .leftToRight)
-                    .frame(minWidth: 180)
-                if !models.isEmpty {
-                    Menu(L("Choose")) {
-                        ForEach(models, id: \.self) { model in
-                            Button(model) { settings.model = model }
-                        }
-                    }
-                    .fixedSize()
-                }
-            }
-        }
-
-        HStack(spacing: 10) {
-            Button {
-                Task { await test() }
-            } label: {
-                Label(L("Test Connection"), systemImage: "bolt.horizontal.circle")
-            }
-            .disabled(testState == .testing)
-            switch testState {
-            case .idle: EmptyView()
-            case .testing: ProgressView().controlSize(.small)
-            case .ok(let count):
-                Label(count > 0 ? LF("Connected · %d models available", count) : L("Connected"), systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green).font(.callout)
-            case .failed(let message):
-                Label(message, systemImage: "xmark.octagon.fill")
-                    .foregroundStyle(.red).font(.callout).lineLimit(3).textSelection(.enabled)
-            }
-        }
-        .onAppear { keyDraft = settings.apiKey ?? "" }
     }
 
     private func saveKey() {
@@ -136,7 +337,7 @@ struct AISetupSection: View {
     }
 
     private func test() async {
-        if keyDraft.trimmed != (settings.apiKey ?? "") { saveKey() }
+        if !isSubscriptionAccount && keyDraft.trimmed != (settings.apiKey ?? "") { saveKey() }
         testState = .testing
         do {
             let list = try await LLMClient.testConnection(config: settings.llmConfig)
@@ -144,6 +345,8 @@ struct AISetupSection: View {
             if !list.isEmpty {
                 settings.model = Providers.bestModel(from: list, provider: settings.provider, current: settings.model)
             }
+            if isChatGPTAccount { await chatGPTAuth.refresh() }
+            if isClaudeAccount { await claudeAuth.refresh() }
             testState = .ok(list.count)
         } catch {
             testState = .failed(error.localizedDescription.components(separatedBy: "\n").first ?? "")

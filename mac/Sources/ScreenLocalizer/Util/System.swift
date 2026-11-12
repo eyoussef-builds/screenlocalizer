@@ -68,7 +68,7 @@ enum AppRelauncher {
         let path = Bundle.main.bundlePath
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sh")
-        task.arguments = ["-c", "sleep 0.6; /usr/bin/open \"\(path)\""]
+        task.arguments = ["-c", "sleep 0.6; exec /usr/bin/open \"$1\"", "--", path]
         try? task.run()
         NSApp.terminate(nil)
     }

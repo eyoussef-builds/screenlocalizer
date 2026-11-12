@@ -47,10 +47,28 @@ final class HistoryStore: ObservableObject {
     }
 
     func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        entries = (try? decoder.decode([HistoryEntry].self, from: data)) ?? []
+        let url = fileURL
+        if DebugHooks.enabled {
+            guard let data = try? Data(contentsOf: url) else { return }
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            entries = (try? decoder.decode([HistoryEntry].self, from: data)) ?? []
+            return
+        }
+        Task.detached(priority: .utility) {
+            guard let data = try? Data(contentsOf: url) else { return }
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let decoded = (try? decoder.decode([HistoryEntry].self, from: data)) ?? []
+            await MainActor.run {
+                if HistoryStore.shared.entries.isEmpty {
+                    HistoryStore.shared.entries = decoded
+                } else {
+                    let existingIDs = Set(HistoryStore.shared.entries.map(\.id))
+                    HistoryStore.shared.entries.append(contentsOf: decoded.filter { !existingIDs.contains($0.id) })
+                }
+            }
+        }
     }
 
     func save(_ session: Session) {

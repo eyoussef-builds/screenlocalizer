@@ -1,6 +1,7 @@
 import Foundation
 
 struct LLMConfig {
+    var providerID: String = "openai"
     var baseURL: String
     var apiKey: String?
     var model: String
@@ -9,6 +10,12 @@ struct LLMConfig {
 
 enum LLMError: LocalizedError {
     case missingKey
+    case missingChatGPTLogin
+    case missingCodexCLI
+    case chatGPT(String)
+    case missingClaudeLogin
+    case missingClaudeCLI
+    case claude(String)
     case invalidURL
     case http(Int, String)
     case network(String)
@@ -17,6 +24,18 @@ enum LLMError: LocalizedError {
         switch self {
         case .missingKey:
             return L("No API key yet. Add your key in Settings → AI.")
+        case .missingChatGPTLogin:
+            return L("Not signed in to ChatGPT yet. Sign in from Settings → AI.")
+        case .missingCodexCLI:
+            return L("Install the official ChatGPT macOS app or Codex CLI to sign in with ChatGPT. Check Settings → AI.")
+        case .chatGPT(let message):
+            return message
+        case .missingClaudeLogin:
+            return L("Not signed in to Claude yet. Sign in from Settings → AI.")
+        case .missingClaudeCLI:
+            return L("Install Claude Code CLI to sign in with your Claude account. Check Settings → AI.")
+        case .claude(let message):
+            return message
         case .invalidURL:
             return L("The API base URL is not valid. Check Settings → AI.")
         case .http(let code, let message):
@@ -33,14 +52,114 @@ enum LLMError: LocalizedError {
     }
 
     var isMissingKey: Bool {
-        if case .missingKey = self { return true }
-        if case .http(401, _) = self { return true }
-        return false
+        switch self {
+        case .missingKey, .missingChatGPTLogin, .missingCodexCLI, .missingClaudeLogin, .missingClaudeCLI, .http(401, _):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+/// Bounded in-memory LRU cache for recent mode outputs so re-selecting the same text returns in 0ms.
+final class TranslationCache: @unchecked Sendable {
+    static let shared = TranslationCache()
+
+    private let lock = NSLock()
+    private let capacity = 64
+    private var entries: [String: String] = [:]
+    private var order: [String] = []
+
+    private init() {}
+
+    @MainActor
+    static func makeKey(mode: Mode, source: String, settings: AppSettings) -> String {
+        let glossarySig = settings.glossary
+            .map { "\($0.term.trimmed)=\($0.rendering.trimmed)" }
+            .joined(separator: ";")
+        return [
+            settings.providerID,
+            settings.model.trimmed,
+            settings.targetLanguage.trimmed,
+            mode.rawValue,
+            settings.customInstructions.trimmed,
+            glossarySig,
+            source.trimmed,
+        ].joined(separator: "\u{001F}")
+    }
+
+    func get(_ key: String) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let value = entries[key] else { return nil }
+        if let idx = order.firstIndex(of: key) {
+            order.remove(at: idx)
+            order.append(key)
+        }
+        return value
+    }
+
+    func set(_ value: String, for key: String) {
+        let trimmed = value.trimmed
+        guard !trimmed.isEmpty else { return }
+        lock.lock()
+        if entries[key] != nil, let idx = order.firstIndex(of: key) {
+            order.remove(at: idx)
+        } else if order.count >= capacity, let oldest = order.first {
+            order.removeFirst()
+            entries.removeValue(forKey: oldest)
+        }
+        entries[key] = value
+        order.append(key)
+        lock.unlock()
     }
 }
 
 /// Minimal client for OpenAI-compatible APIs (OpenAI, OpenRouter, Groq, Ollama, LM Studio, …).
 enum LLMClient {
+    private static let fastSession: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.httpMaximumConnectionsPerHost = 6
+        cfg.waitsForConnectivity = false
+        cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
+        cfg.urlCache = nil
+        return URLSession(configuration: cfg)
+    }()
+
+    private static let warmLock = NSLock()
+    private static var lastHTTPWarmupByHost: [String: Date] = [:]
+
+    /// Predictively wakes the active provider runtime or warms TLS/HTTP2 connections before the user clicks.
+    @MainActor
+    static func prewarmActiveProvider() {
+        let settings = AppSettings.shared
+        let providerID = settings.providerID
+        let model = settings.model
+        if providerID == Providers.chatGPTAccountID {
+            let defaultMsgs = Prompts.messages(mode: settings.defaultMode, source: "warmup", context: SourceContext(), settings: settings)
+            Task { await ChatGPTAccountClient.shared.prewarm(requestedModel: model, defaultMessages: defaultMsgs) }
+            return
+        }
+        if providerID == Providers.claudeAccountID {
+            Task { await ClaudeAccountClient.shared.prewarm(requestedModel: model) }
+            return
+        }
+        let config = settings.llmConfig
+        if config.requiresKey && (config.apiKey ?? "").isEmpty { return }
+        guard let modelsURL = url(config.baseURL, "/models"), let host = modelsURL.host else { return }
+        warmLock.lock()
+        let last = lastHTTPWarmupByHost[host] ?? .distantPast
+        let shouldWarm = Date().timeIntervalSince(last) > 45
+        if shouldWarm { lastHTTPWarmupByHost[host] = Date() }
+        warmLock.unlock()
+        guard shouldWarm, var req = try? request(modelsURL, config: config) else { return }
+        req.httpMethod = "HEAD"
+        req.timeoutInterval = 5
+        Task.detached(priority: .utility) {
+            _ = try? await fastSession.data(for: req)
+        }
+    }
+
     static func url(_ base: String, _ path: String) -> URL? {
         var trimmed = base.trimmed
         while trimmed.hasSuffix("/") { trimmed.removeLast() }
@@ -65,7 +184,13 @@ enum LLMClient {
     // MARK: Chat (streaming)
 
     static func streamChat(config: LLMConfig, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
-        AsyncThrowingStream { continuation in
+        if config.providerID == Providers.chatGPTAccountID {
+            return ChatGPTAccountClient.shared.streamChat(model: config.model, messages: messages)
+        }
+        if config.providerID == Providers.claudeAccountID {
+            return ClaudeAccountClient.shared.streamChat(model: config.model, messages: messages)
+        }
+        return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
                     try await performStream(config: config, messages: messages, tuned: true, continuation: continuation)
@@ -97,7 +222,7 @@ enum LLMClient {
         let bytes: URLSession.AsyncBytes
         let response: URLResponse
         do {
-            (bytes, response) = try await URLSession.shared.bytes(for: req)
+            (bytes, response) = try await fastSession.bytes(for: req)
         } catch {
             if (error as? URLError)?.code == .cancelled || error is CancellationError { throw CancellationError() }
             throw LLMError.network(error.localizedDescription)
@@ -165,11 +290,17 @@ enum LLMClient {
     // MARK: Models & connection test
 
     static func listModels(config: LLMConfig) async throws -> [String] {
+        if config.providerID == Providers.chatGPTAccountID {
+            return try await ChatGPTAccountClient.shared.testConnection()
+        }
+        if config.providerID == Providers.claudeAccountID {
+            return try await ClaudeAccountClient.shared.testConnection()
+        }
         guard let url = url(config.baseURL, "/models") else { throw LLMError.invalidURL }
         var req = try request(url, config: config)
         req.timeoutInterval = 20
         let (data, response): (Data, URLResponse)
-        do { (data, response) = try await URLSession.shared.data(for: req) } catch { throw LLMError.network(error.localizedDescription) }
+        do { (data, response) = try await fastSession.data(for: req) } catch { throw LLMError.network(error.localizedDescription) }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard status == 200 else { throw LLMError.http(status, errorMessage(from: data)) }
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
