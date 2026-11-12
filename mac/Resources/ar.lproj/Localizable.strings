@@ -28,6 +28,8 @@
 "Paste or type text here, then press ⌘↩" = "الصق النص أو اكتبه هنا، ثم اضغط ⌘↩";
 "Results appear here." = "تظهر النتائج هنا.";
 "Add API Key…" = "إضافة مفتاح API…";
+"Sign in with ChatGPT…" = "تسجيل الدخول بحساب ChatGPT…";
+"Sign in with Claude…" = "تسجيل الدخول بحساب Claude…";
 "Try Again" = "حاول مجددًا";
 "Ask a follow-up question…" = "اطرح سؤالًا متابعًا…";
 "Send" = "إرسال";
@@ -39,6 +41,19 @@
 
 /* Errors & toasts */
 "No API key yet. Add your key in Settings → AI." = "لم تُضِف مفتاح API بعد. أضِفه من الإعدادات ← الذكاء الاصطناعي.";
+"Not signed in to ChatGPT yet. Sign in from Settings → AI." = "لم تسجّل الدخول إلى ChatGPT بعد. سجّل الدخول من الإعدادات ← الذكاء الاصطناعي.";
+"Install the official ChatGPT macOS app or Codex CLI to sign in with ChatGPT. Check Settings → AI." = "ثبّت تطبيق ChatGPT الرسمي لنظام macOS أو Codex CLI لتسجيل الدخول بحساب ChatGPT. راجع الإعدادات ← الذكاء الاصطناعي.";
+"Failed to start a ChatGPT session." = "تعذّر بدء جلسة ChatGPT.";
+"The ChatGPT local service stopped unexpectedly. Try again." = "توقّفت خدمة ChatGPT المحلية بشكل غير متوقّع. حاول مجددًا.";
+"ChatGPT service is not initialized." = "خدمة ChatGPT غير مهيّأة.";
+"ChatGPT connection is closed." = "اتصال ChatGPT مغلق.";
+"Unknown ChatGPT error." = "خطأ غير معروف من ChatGPT.";
+"ChatGPT request failed." = "فشل طلب ChatGPT.";
+"Sign-in was cancelled or failed." = "تم إلغاء تسجيل الدخول أو تعذّر إكماله.";
+"Not signed in to Claude yet. Sign in from Settings → AI." = "لم تسجّل الدخول إلى Claude بعد. سجّل الدخول من الإعدادات ← الذكاء الاصطناعي.";
+"Install Claude Code CLI to sign in with your Claude account. Check Settings → AI." = "ثبّت أداة Claude Code CLI لتسجيل الدخول بحسابك في Claude. راجع الإعدادات ← الذكاء الاصطناعي.";
+"Claude request failed." = "فشل طلب Claude.";
+"Claude sign-in was cancelled or failed." = "تم إلغاء تسجيل الدخول إلى Claude أو تعذّر إكماله.";
 "The API base URL is not valid. Check Settings → AI." = "رابط الـ API غير صالح. تحقّق من الإعدادات ← الذكاء الاصطناعي.";
 "The API key was rejected. Check it in Settings → AI." = "تم رفض مفتاح API. تحقّق منه في الإعدادات ← الذكاء الاصطناعي.";
 "Model or endpoint not found. Check the model name in Settings → AI." = "النموذج أو الرابط غير موجود. تحقّق من اسم النموذج في الإعدادات ← الذكاء الاصطناعي.";
@@ -119,6 +134,25 @@
 /* Settings: AI */
 "AI provider" = "مزوّد الذكاء الاصطناعي";
 "Provider" = "المزوّد";
+"ChatGPT Account" = "حساب ChatGPT";
+"Checking ChatGPT account…" = "جارٍ التحقّق من حساب ChatGPT…";
+"Signed in with ChatGPT" = "مسجّل الدخول بحساب ChatGPT";
+"Sign Out" = "تسجيل الخروج";
+"Sign in with your ChatGPT account — no API key needed." = "سجّل الدخول بحسابك في ChatGPT — دون الحاجة إلى مفتاح API.";
+"Sign in with ChatGPT" = "تسجيل الدخول بحساب ChatGPT";
+"Complete sign-in in your browser…" = "أكمل تسجيل الدخول في المتصفح…";
+"Open Browser ↗" = "فتح المتصفح ↗";
+"Cancel" = "إلغاء";
+"Install the official ChatGPT macOS app or Codex CLI to sign in with your ChatGPT account." = "ثبّت تطبيق ChatGPT الرسمي لنظام macOS أو أداة Codex CLI لتسجيل الدخول بحسابك في ChatGPT.";
+"Check Again" = "إعادة الفحص";
+"Download ChatGPT for macOS ↗" = "تنزيل ChatGPT لنظام macOS ↗";
+"Claude Account" = "حساب Claude";
+"Checking Claude account…" = "جارٍ التحقّق من حساب Claude…";
+"Signed in with Claude" = "مسجّل الدخول بحساب Claude";
+"Sign in with your Claude account — no API key needed." = "سجّل الدخول بحسابك في Claude — دون الحاجة إلى مفتاح API.";
+"Sign in with Claude" = "تسجيل الدخول بحساب Claude";
+"Install Claude Code CLI to sign in with your Claude account." = "ثبّت أداة Claude Code CLI لتسجيل الدخول بحسابك في Claude.";
+"Install Claude Code CLI ↗" = "تثبيت Claude Code CLI ↗";
 "API base URL" = "رابط الـ API الأساسي";
 "API key" = "مفتاح API";
 "Show or hide the key" = "إظهار المفتاح أو إخفاؤه";
@@ -130,7 +164,7 @@
 "Test Connection" = "اختبار الاتصال";
 "Connected" = "متصل";
 "Connected · %d models available" = "متصل · %d نموذج متاح";
-"Works with OpenAI and any OpenAI-compatible API (OpenRouter, Groq, Ollama, LM Studio…). Keys are stored in your macOS Keychain and sent only to the provider you choose." = "يعمل مع OpenAI وأي API متوافق معه (OpenRouter وGroq وOllama وLM Studio…). تُحفظ المفاتيح في سلسلة مفاتيح macOS ولا تُرسل إلا إلى المزوّد الذي تختاره.";
+"Use your ChatGPT or Claude account without an API key, or connect OpenAI and any OpenAI-compatible API (OpenRouter, Groq, Ollama, LM Studio…). Keys are stored in your macOS Keychain." = "استخدم حسابك في ChatGPT أو Claude بدون مفتاح API، أو اربط OpenAI وأي API متوافق معه (OpenRouter وGroq وOllama وLM Studio…). تُحفظ المفاتيح في سلسلة مفاتيح macOS.";
 
 /* Settings: triggers */
 "Keyboard shortcuts" = "اختصارات لوحة المفاتيح";
@@ -193,7 +227,7 @@
 "Which language do you want results in?" = "بأي لغة تريد النتائج؟";
 "Translations, explanations and summaries will be written in this language. You can change it any time." = "ستُكتب الترجمات والشروحات والملخصات بهذه اللغة. يمكنك تغييرها في أي وقت.";
 "Connect your AI provider" = "اربط مزوّد الذكاء الاصطناعي";
-"ScreenLocalizer uses your own API key, so there's no subscription. OpenAI is the default; any OpenAI-compatible service works." = "يستخدم ScreenLocalizer مفتاح API الخاص بك، فلا يوجد اشتراك. OpenAI هو الافتراضي، وتعمل أي خدمة متوافقة مع OpenAI.";
+"Sign in with your ChatGPT or Claude account — no API key needed — or use an API key from OpenAI or any compatible provider." = "سجّل الدخول بحسابك في ChatGPT أو Claude دون الحاجة إلى مفتاح API، أو استخدم مفتاح API من OpenAI أو أي مزوّد متوافق.";
 "Allow access" = "السماح بالوصول";
 "macOS asks you to approve these once. Turn ScreenLocalizer on in each list that opens." = "يطلب macOS موافقتك مرة واحدة فقط. فعّل ScreenLocalizer في كل قائمة تُفتح.";
 "You're all set" = "كل شيء جاهز";

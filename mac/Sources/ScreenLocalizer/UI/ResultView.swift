@@ -45,6 +45,11 @@ struct ResultView: View {
         .background(VisualEffectBackground())
         .ignoresSafeArea(.container, edges: .top)
         .onAppear { if session.editingSource { sourceFocused = true } }
+        .onChange(of: session.id) { _, _ in
+            question = ""
+            copied = false
+            if session.editingSource { sourceFocused = true }
+        }
     }
 
     // MARK: Header
@@ -55,7 +60,7 @@ struct ResultView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Brand.gradient)
             Text("ScreenLocalizer").font(.system(size: 13, weight: .semibold))
-            if session.isStreaming { ProgressView().controlSize(.mini).padding(.leading, 2) }
+            if session.isStreaming || session.isPreparing { ProgressView().controlSize(.mini).padding(.leading, 2) }
             Spacer(minLength: 8)
             privacyToggle
             iconButton(settings.sideBySide ? "rectangle.split.2x1.fill" : "rectangle.split.2x1",
@@ -74,6 +79,7 @@ struct ResultView: View {
         .padding(.horizontal, 12)
         .padding(.top, 10)
         .frame(height: 40)
+        .background(WindowDragArea())
     }
 
     private var privacyToggle: some View {
@@ -204,8 +210,11 @@ struct ResultView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    Color.clear.frame(height: 0).id("top")
                     if let error = session.error {
                         errorView(error)
+                    } else if session.isPreparing {
+                        TypingDots()
                     } else if !session.hasSource && session.editingSource {
                         placeholder(L("Results appear here."))
                     } else if session.currentOutput.isEmpty && session.streamingMode == session.mode {
@@ -236,6 +245,9 @@ struct ResultView: View {
                 .padding(14)
                 .environment(\.layoutDirection, rtl ? .rightToLeft : .leftToRight)
             }
+            .onChange(of: session.id) { _, _ in
+                proxy.scrollTo("top", anchor: .top)
+            }
             .onChange(of: session.tick) { _, _ in
                 if !session.turns.isEmpty { proxy.scrollTo("bottom", anchor: .bottom) }
             }
@@ -258,8 +270,15 @@ struct ResultView: View {
             }
             HStack {
                 if session.needsKey {
-                    Button(L("Add API Key…")) { WindowManager.shared.show(.settings, tab: .ai) }
-                        .buttonStyle(.borderedProminent)
+                    let actionTitle: String = {
+                        if settings.providerID == Providers.chatGPTAccountID { return L("Sign in with ChatGPT…") }
+                        if settings.providerID == Providers.claudeAccountID { return L("Sign in with Claude…") }
+                        return L("Add API Key…")
+                    }()
+                    Button(actionTitle) {
+                        WindowManager.shared.show(.settings, tab: .ai)
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
                 Button(L("Try Again")) { session.run(session.mode, force: true) }
             }
@@ -308,7 +327,10 @@ struct ResultView: View {
             if let error = speaker.lastError {
                 Image(systemName: "speaker.slash").foregroundStyle(.orange).help(error)
             }
-            Text(settings.model).font(.system(size: 10.5)).foregroundStyle(.tertiary).lineLimit(1)
+            Text(verbatim: "\(settings.provider.name) · \(settings.model)")
+                .font(.system(size: 10.5))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
@@ -372,4 +394,16 @@ struct VisualEffectBackground: NSViewRepresentable {
         return view
     }
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+}
+
+struct WindowDragArea: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { DragView() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class DragView: NSView {
+        override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+        override func mouseDown(with event: NSEvent) {
+            window?.performDrag(with: event)
+        }
+    }
 }

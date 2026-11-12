@@ -77,6 +77,17 @@ final class StatusMenuBuilder: NSObject, NSMenuDelegate {
         menu.addItem(last)
 
         menu.addItem(.separator())
+        let providerItem = NSMenuItem(title: L("AI provider"), action: nil, keyEquivalent: "")
+        let providerMenu = NSMenu()
+        for preset in Providers.all {
+            let item = NSMenuItem(title: preset.name, action: #selector(AppDelegate.selectAIProvider(_:)), keyEquivalent: "")
+            item.representedObject = preset.id
+            item.state = settings.providerID == preset.id ? .on : .off
+            providerMenu.addItem(item)
+        }
+        providerItem.submenu = providerMenu
+        menu.addItem(providerItem)
+
         let modeItem = NSMenuItem(title: L("Default Mode"), action: nil, keyEquivalent: "")
         let modeMenu = NSMenu()
         for mode in Mode.allCases {
@@ -110,6 +121,7 @@ final class StatusMenuBuilder: NSObject, NSMenuDelegate {
         for item in menu.items where item.action != #selector(NSApplication.terminate(_:)) {
             item.target = NSApp.delegate
         }
+        for item in providerMenu.items { item.target = NSApp.delegate }
         for item in modeMenu.items { item.target = NSApp.delegate }
     }
 }

@@ -19,7 +19,7 @@ mkdir -p build
 swiftc "${OPT[@]}" -swift-version 5 -target arm64-apple-macos14.0 -sdk "$SDK" \
   -module-name ScreenLocalizer "${SOURCES[@]}" -o build/ScreenLocalizer
 
-echo "→ Assembling $APP…"
+echo "→ Assembling ${APP}…"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 mv build/ScreenLocalizer "$APP/Contents/MacOS/ScreenLocalizer"
@@ -33,11 +33,15 @@ for strings in "$APP"/Contents/Resources/*.lproj/*.strings; do
 done
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
-# Signs with a stable local identity if the user created one (scripts/setup-signing.sh) so macOS
-# keeps Accessibility / Screen Recording approvals across updates; otherwise ad-hoc.
-IDENTITY="-"
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "ScreenLocalizer Local Signing"; then
-  IDENTITY="ScreenLocalizer Local Signing"
+# Signs with SIGNING_IDENTITY if provided, or a stable local identity ("ScreenLocalizer Local Signing")
+# so macOS keeps Accessibility / Screen Recording approvals across updates; otherwise ad-hoc.
+IDENTITY="${SIGNING_IDENTITY:-}"
+if [[ -z "$IDENTITY" ]]; then
+  if security find-identity -v -p codesigning 2>/dev/null | grep -q "ScreenLocalizer Local Signing"; then
+    IDENTITY="ScreenLocalizer Local Signing"
+  else
+    IDENTITY="-"
+  fi
 fi
 codesign --force --sign "$IDENTITY" --identifier me.eyoussef.screenlocalizer --timestamp=none "$APP"
 codesign --verify --strict "$APP"

@@ -9,7 +9,6 @@ final class SelectionWatcher {
     private var downPoint: NSPoint = .zero
     private var dragged = false
     private var checkWork: DispatchWorkItem?
-    private var enabledPIDs: Set<pid_t> = []
 
     func start() {
         guard monitors.isEmpty else { return }
@@ -26,13 +25,17 @@ final class SelectionWatcher {
             guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
             MainActor.assumeIsolated { self?.prepare(app) }
         }
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didTerminateApplicationNotification,
+                                                          object: nil, queue: .main) { note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+            AX.forgetProcess(pid: app.processIdentifier)
+        }
         if let front = NSWorkspace.shared.frontmostApplication { prepare(front) }
     }
 
     private func prepare(_ app: NSRunningApplication) {
         let pid = app.processIdentifier
-        guard pid != getpid(), !enabledPIDs.contains(pid), AX.isTrusted else { return }
-        enabledPIDs.insert(pid)
+        guard pid != getpid(), AX.isTrusted else { return }
         DispatchQueue.global(qos: .utility).async { AX.enableManualAccessibility(pid: pid) }
     }
 
@@ -95,6 +98,6 @@ final class SelectionWatcher {
             }
         }
         checkWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.045, execute: work)
     }
 }

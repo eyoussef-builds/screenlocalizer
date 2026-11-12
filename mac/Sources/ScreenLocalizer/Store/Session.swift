@@ -19,12 +19,15 @@ final class Session: ObservableObject, Identifiable {
     @Published var needsKey = false
     /// True for the paste box: the source text is typed or pasted into the panel itself.
     @Published var editingSource: Bool
-    /// Bumped on every streamed chunk so the panel can auto-scroll.
+    /// True while ScreenOCR is recognizing pixels for an already-opened optimistic panel.
+    @Published var isPreparing: Bool
+    /// Bumped on coalesced stream frames so the panel can auto-scroll without per-token thrashing.
     @Published var tick = 0
 
     private var task: Task<Void, Never>?
+    private var activeStreamID: UUID?
 
-    init(source: String, origin: SourceOrigin, context: SourceContext = SourceContext(), mode: Mode? = nil, editingSource: Bool = false) {
+    init(source: String, origin: SourceOrigin, context: SourceContext = SourceContext(), mode: Mode? = nil, editingSource: Bool = false, isPreparing: Bool = false) {
         self.id = UUID()
         self.createdAt = Date()
         self.source = source
@@ -32,6 +35,7 @@ final class Session: ObservableObject, Identifiable {
         self.context = context
         self.mode = mode ?? AppSettings.shared.defaultMode
         self.editingSource = editingSource
+        self.isPreparing = isPreparing
     }
 
     /// Rebuilds a session from a saved history entry.
@@ -45,24 +49,43 @@ final class Session: ObservableObject, Identifiable {
         for (key, value) in entry.outputs { if let mode = Mode(rawValue: key) { outputs[mode] = value } }
         self.outputs = outputs
         self.turns = entry.turns
-        self.mode = outputs.keys.first ?? AppSettings.shared.defaultMode
+        self.mode = Mode.allCases.first { outputs[$0] != nil } ?? AppSettings.shared.defaultMode
         self.editingSource = false
+        self.isPreparing = false
     }
 
     var currentOutput: String { outputs[mode] ?? "" }
 
     var hasSource: Bool { !source.trimmed.isEmpty }
 
+    func finishPreparingAndRun(source: String) {
+        self.source = source
+        self.isPreparing = false
+        run(mode)
+    }
+
     func run(_ mode: Mode, force: Bool = false) {
         self.mode = mode
         guard hasSource else { return }
         if !force, let existing = outputs[mode], !existing.isEmpty || streamingMode == mode { return }
+
+        let settings = AppSettings.shared
+        let cacheKey = TranslationCache.makeKey(mode: mode, source: source, settings: settings)
+        if !force, let cached = TranslationCache.shared.get(cacheKey), !cached.isEmpty {
+            cancel()
+            error = nil
+            needsKey = false
+            outputs[mode] = cached
+            HistoryStore.shared.save(self)
+            return
+        }
+
         cancel()
         error = nil
         needsKey = false
         outputs[mode] = ""
-        let messages = Prompts.messages(mode: mode, source: source, context: context, settings: AppSettings.shared)
-        stream(messages, mode: mode) { [weak self] chunk in
+        let messages = Prompts.messages(mode: mode, source: source, context: context, settings: settings)
+        stream(messages, mode: mode, cacheKey: cacheKey) { [weak self] chunk in
             self?.outputs[mode, default: ""] += chunk
         } onFail: { [weak self] in
             if self?.outputs[mode]?.isEmpty == true { self?.outputs[mode] = nil }
@@ -78,7 +101,7 @@ final class Session: ObservableObject, Identifiable {
                                                 turns: turns, question: q, settings: AppSettings.shared)
         turns.append(ChatTurn(question: q, answer: ""))
         let index = turns.count - 1
-        stream(messages, mode: nil) { [weak self] chunk in
+        stream(messages, mode: nil, cacheKey: nil) { [weak self] chunk in
             guard let self, index < self.turns.count else { return }
             self.turns[index].answer += chunk
         } onFail: { [weak self] in
@@ -88,27 +111,72 @@ final class Session: ObservableObject, Identifiable {
     }
 
     func cancel() {
+        activeStreamID = nil
         task?.cancel()
         task = nil
         isStreaming = false
         streamingMode = nil
     }
 
-    private func stream(_ messages: [ChatMessage], mode: Mode?, onChunk: @escaping (String) -> Void, onFail: @escaping () -> Void) {
+    private func flushPendingBatch(
+        _ pendingBuffer: inout String,
+        streamID: UUID,
+        onChunk: (String) -> Void,
+        lastFlush: inout ContinuousClock.Instant
+    ) {
+        guard !pendingBuffer.isEmpty, activeStreamID == streamID else { return }
+        let batch = pendingBuffer
+        pendingBuffer = ""
+        onChunk(batch)
+        if !turns.isEmpty { tick &+= 1 }
+        lastFlush = ContinuousClock.now
+    }
+
+    private func stream(_ messages: [ChatMessage], mode: Mode?, cacheKey: String?, onChunk: @escaping (String) -> Void, onFail: @escaping () -> Void) {
+        let streamID = UUID()
+        activeStreamID = streamID
         isStreaming = true
         streamingMode = mode
         let config = AppSettings.shared.llmConfig
         task = Task { @MainActor [weak self] in
+            var pendingBuffer = ""
+            var emittedFirstChunk = false
+            var lastFlush = ContinuousClock.now
+            let frameInterval = Duration.milliseconds(16)
+
             do {
                 for try await chunk in LLMClient.streamChat(config: config, messages: messages) {
-                    onChunk(chunk)
-                    self?.tick &+= 1
+                    guard let self, self.activeStreamID == streamID else { return }
+                    if !emittedFirstChunk {
+                        // Paint the very first token with zero buffering delay for minimum TTFT.
+                        emittedFirstChunk = true
+                        onChunk(chunk)
+                        if !self.turns.isEmpty { self.tick &+= 1 }
+                        lastFlush = ContinuousClock.now
+                    } else {
+                        pendingBuffer += chunk
+                        if ContinuousClock.now - lastFlush >= frameInterval {
+                            self.flushPendingBatch(&pendingBuffer, streamID: streamID, onChunk: onChunk, lastFlush: &lastFlush)
+                        }
+                    }
                 }
-                self?.finish()
+                if let self {
+                    self.flushPendingBatch(&pendingBuffer, streamID: streamID, onChunk: onChunk, lastFlush: &lastFlush)
+                }
+                guard let self, self.activeStreamID == streamID else { return }
+                if let mode, let cacheKey, let finished = self.outputs[mode], !finished.isEmpty {
+                    TranslationCache.shared.set(finished, for: cacheKey)
+                }
+                self.finish()
             } catch is CancellationError {
-                self?.isStreaming = false
+                guard let self, self.activeStreamID == streamID else { return }
+                self.isStreaming = false
+                self.streamingMode = nil
             } catch {
-                guard let self else { return }
+                if let self {
+                    self.flushPendingBatch(&pendingBuffer, streamID: streamID, onChunk: onChunk, lastFlush: &lastFlush)
+                }
+                guard let self, self.activeStreamID == streamID else { return }
                 self.isStreaming = false
                 self.streamingMode = nil
                 if Task.isCancelled { return }
@@ -120,6 +188,7 @@ final class Session: ObservableObject, Identifiable {
     }
 
     private func finish() {
+        activeStreamID = nil
         isStreaming = false
         streamingMode = nil
         HistoryStore.shared.save(self)

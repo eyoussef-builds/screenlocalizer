@@ -30,11 +30,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         HistoryStore.shared.load()
         SelectionWatcher.shared.start()
         ClipboardWatcher.shared.start()
+        if settings.providerID == Providers.chatGPTAccountID {
+            Task { await ChatGPTAuthStore.shared.refresh() }
+        } else if settings.providerID == Providers.claudeAccountID {
+            Task { await ClaudeAuthStore.shared.refresh() }
+        }
+
+        // Prewarm UI panels, ScreenCaptureKit metadata, and the active AI transport right after launch.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            PanelController.shared.prewarm()
+            FloatingButton.shared.prewarm()
+            LLMClient.prewarmActiveProvider()
+            ScreenOCR.prewarm()
+        }
 
         if !settings.onboardingDone || CommandLine.arguments.contains("--onboarding") {
             WindowManager.shared.show(.onboarding)
         }
         DebugHooks.run()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        Task {
+            await ChatGPTAccountClient.shared.shutdown()
+            await ClaudeAccountClient.shared.shutdown()
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -89,6 +109,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func selectDefaultMode(_ sender: NSMenuItem) {
         if let raw = sender.representedObject as? String, let mode = Mode(rawValue: raw) {
             AppSettings.shared.defaultMode = mode
+        }
+    }
+
+    @objc func selectAIProvider(_ sender: NSMenuItem) {
+        if let id = sender.representedObject as? String {
+            AppSettings.shared.selectProvider(id)
         }
     }
 

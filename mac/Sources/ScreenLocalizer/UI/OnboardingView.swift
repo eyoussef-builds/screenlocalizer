@@ -70,7 +70,7 @@ struct OnboardingView: View {
 
     private var aiStep: some View {
         stepLayout(title: L("Connect your AI provider"),
-                   subtitle: L("ScreenLocalizer uses your own API key, so there's no subscription. OpenAI is the default; any OpenAI-compatible service works.")) {
+                   subtitle: L("Sign in with your ChatGPT or Claude account — no API key needed — or use an API key from OpenAI or any compatible provider.")) {
             Form { AISetupSection() }.formStyle(.grouped)
         }
     }

@@ -8,7 +8,8 @@ ScreenLocalizer for Mac
 4. Open the Apple menu > System Settings > Privacy & Security. Scroll down and click
    "Open Anyway" next to ScreenLocalizer. Type your Mac password, then click "Open Anyway" again.
    You only need to do this once.
-5. The welcome window walks you through the rest (language, AI key, permissions).
+5. The welcome window walks you through the rest (language, signing in with your personal ChatGPT or
+   Claude account — or pasting an API key — and permissions).
 
 Full step-by-step guide: https://github.com/eyoussef-builds/screenlocalizer
 
@@ -22,6 +23,7 @@ ScreenLocalizer للماك
    اضغط «تم» (Done).
 ٤. افتح قائمة Apple ← إعدادات النظام ← الخصوصية والأمان. انزل للأسفل واضغط «فتح على أي حال» (Open Anyway)
    بجانب ScreenLocalizer، ثم اكتب كلمة سر الماك واضغط «فتح على أي حال» مرة أخرى. هذا مرة واحدة فقط.
-٥. نافذة الترحيب ستكمل معك الباقي (اللغة، مفتاح الذكاء الاصطناعي، الأذونات).
+٥. نافذة الترحيب ستكمل معك الباقي (اللغة، وتسجيل الدخول بحسابك الشخصي في ChatGPT أو Claude دون مفتاح API —
+   أو لصق مفتاح API — والأذونات).
 
 الدليل الكامل خطوة بخطوة: https://github.com/eyoussef-builds/screenlocalizer/blob/main/README.ar.md

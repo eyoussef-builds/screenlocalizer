@@ -10,9 +10,11 @@ final class Speaker: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
     @Published var lastError: String?
 
     private let synthesizer = AVSpeechSynthesizer()
+    private weak var activeUtterance: AVSpeechUtterance?
     private var player: AVAudioPlayer?
     private var queue: [String] = []
     private var task: Task<Void, Never>?
+    private var playbackID = UUID()
 
     static let openAIVoices = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"]
 
@@ -39,9 +41,12 @@ final class Speaker: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
     }
 
     func stop() {
+        playbackID = UUID()
+        activeUtterance = nil
         task?.cancel()
         task = nil
         queue = []
+        player?.delegate = nil
         player?.stop()
         player = nil
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
@@ -66,16 +71,25 @@ final class Speaker: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
         } else {
             utterance.voice = Speaker.voices(for: language).first ?? AVSpeechSynthesisVoice(language: Languages.speechCode(language))
         }
+        activeUtterance = utterance
         isSpeaking = true
         synthesizer.speak(utterance)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        DispatchQueue.main.async { self.isSpeaking = false }
+        DispatchQueue.main.async {
+            guard self.activeUtterance === utterance else { return }
+            self.activeUtterance = nil
+            self.isSpeaking = false
+        }
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        DispatchQueue.main.async { self.isSpeaking = false }
+        DispatchQueue.main.async {
+            guard self.activeUtterance === utterance else { return }
+            self.activeUtterance = nil
+            self.isSpeaking = false
+        }
     }
 
     // MARK: OpenAI voice
@@ -93,10 +107,12 @@ final class Speaker: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
             return
         }
         let chunk = queue.removeFirst()
+        let currentID = playbackID
         task = Task { @MainActor in
             do {
                 let data = try await LLMClient.speech(config: config, text: chunk, voice: voice)
                 try Task.checkCancellation()
+                guard self.playbackID == currentID else { return }
                 let player = try AVAudioPlayer(data: data)
                 player.delegate = self
                 self.player = player
@@ -105,6 +121,7 @@ final class Speaker: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
                 player.play()
             } catch is CancellationError {
             } catch {
+                guard self.playbackID == currentID else { return }
                 self.lastError = error.localizedDescription
                 self.isLoading = false
                 self.isSpeaking = false
@@ -114,6 +131,7 @@ final class Speaker: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AV
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         DispatchQueue.main.async {
+            guard self.player === player else { return }
             guard let config = AppSettings.shared.speechConfig else { self.stop(); return }
             if self.queue.isEmpty { self.isSpeaking = false } else { self.playNext(config: config, voice: AppSettings.shared.openAIVoice) }
         }

@@ -9,6 +9,7 @@ the pixel data and a plain sRGB tag.
     python3 scripts/clean-images.py --check        # exit 1 if any PNG still has metadata
     python3 scripts/clean-images.py path/to/a.png  # clean specific files
 """
+import pathlib
 import shutil
 import struct
 import subprocess
@@ -58,8 +59,13 @@ def main(args):
     check = "--check" in args
     paths = [a for a in args if not a.startswith("--")]
     if not paths:
-        tracked = subprocess.run(["git", "ls-files", "*.png"], capture_output=True, text=True, check=True).stdout
-        paths = tracked.split()
+        root = pathlib.Path(__file__).resolve().parent.parent
+        git_ls = subprocess.run(["git", "ls-files", "*.png"], cwd=root, capture_output=True, text=True)
+        if git_ls.returncode == 0 and git_ls.stdout.strip():
+            paths = [str(root / p) for p in git_ls.stdout.split()]
+        else:
+            skip = {"build", ".build", "dist", "node_modules", ".git"}
+            paths = [str(p) for p in sorted(root.rglob("*.png")) if not any(part in skip for part in p.parts)]
     if check:
         dirty = [p for p in paths if has_metadata(p)]
         for p in dirty:

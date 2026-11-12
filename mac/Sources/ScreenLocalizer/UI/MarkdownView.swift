@@ -1,10 +1,26 @@
 import SwiftUI
+import Foundation
+
+private final class AttributedBox: NSObject {
+    let value: AttributedString
+    init(_ value: AttributedString) { self.value = value }
+}
 
 /// Renders the small Markdown subset the prompts produce: paragraphs, bullets, numbered items, headings, bold/italic/code.
+/// Caches parsed `AttributedString` blocks so streaming updates are O(1) on completed paragraphs instead of O(N²).
 struct MarkdownView: View {
     let text: String
     var fontSize: CGFloat = 15
     var rtl: Bool = false
+
+    private static let inlineCache: NSCache<NSString, AttributedBox> = {
+        let c = NSCache<NSString, AttributedBox>()
+        c.countLimit = 512
+        return c
+    }()
+
+    private static let numberedRegex = try! NSRegularExpression(pattern: #"^\d{1,3}[.)]\s+"#)
+    private static let markdownOptions = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
 
     private enum Block: Hashable {
         case heading(String)
@@ -57,8 +73,15 @@ struct MarkdownView: View {
     /// Inline Markdown; RTL paragraphs get a right-to-left mark so mixed Arabic/English lines start on the right.
     private func inline(_ s: String) -> AttributedString {
         let source = rtl ? "\u{200F}" + s : s
-        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
+        let key = source as NSString
+        if let cached = Self.inlineCache.object(forKey: key) {
+            return cached.value
+        }
+        let parsed = (try? AttributedString(markdown: source, options: Self.markdownOptions)) ?? AttributedString(source)
+        if source.count <= 4000 {
+            Self.inlineCache.setObject(AttributedBox(parsed), forKey: key)
+        }
+        return parsed
     }
 
     private var blocks: [Block] {
@@ -96,10 +119,12 @@ struct MarkdownView: View {
                 result.append(.bullet(String(line.dropFirst(2))))
                 continue
             }
-            if let match = line.range(of: #"^\d{1,3}[.)]\s+"#, options: .regularExpression) {
+            let nsRange = NSRange(line.startIndex..<line.endIndex, in: line)
+            if let match = Self.numberedRegex.firstMatch(in: line, range: nsRange),
+               let swiftRange = Range(match.range, in: line) {
                 flush()
-                let marker = line[match].trimmingCharacters(in: .whitespaces)
-                result.append(.numbered(marker, String(line[match.upperBound...])))
+                let marker = line[swiftRange].trimmingCharacters(in: .whitespaces)
+                result.append(.numbered(marker, String(line[swiftRange.upperBound...])))
                 continue
             }
             paragraph.append(line)

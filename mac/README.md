@@ -16,7 +16,7 @@ panel can be **hidden from screen recordings**, so you read the Arabic while vie
 | **Panel** | Floating, doesn't steal focus, side-by-side original/result, adjustable text size, copy, regenerate, read aloud, Private/Visible recording toggle |
 | **History** | Every result saved locally, searchable, exportable as a Markdown script |
 | **Glossary** | Your term → rendering list, applied to every prompt |
-| **AI** | OpenAI or any OpenAI-compatible API (OpenRouter, Groq, Ollama, LM Studio, custom). Keys live in the macOS Keychain |
+| **AI** | **ChatGPT Account** & **Claude Account** (no API key needed, via official `ChatGPT.app`/Codex and `Claude Code` runtimes), or OpenAI and any OpenAI-compatible API (OpenRouter, Groq, Ollama, LM Studio, custom). API keys live in the macOS Keychain |
 | **Voice** | macOS voices (free, offline) or OpenAI text-to-speech |
 | **Language** | Interface follows macOS (English / Arabic, fully right-to-left); results in any language picked at first launch |
 
@@ -39,7 +39,7 @@ can't link package manifests).
 
 ### First launch
 
-Onboarding asks for the result language, the AI provider + key, and two macOS permissions:
+Onboarding asks for the result language, ChatGPT / Claude account sign-in (or an API key), and two macOS permissions:
 
 - **Accessibility** — read selected text in other apps (shortcut + floating button).
 - **Screen Recording** — read text from the screen region you box (OCR).
@@ -68,7 +68,7 @@ User guide (English / Arabic): [../README.md](../README.md) · [../README.ar.md]
 ```
 Sources/ScreenLocalizer/
   App/       AppDelegate, menus, windows, action wiring, debug hooks
-  AI/        OpenAI-compatible streaming client, prompts, providers, read-aloud
+  AI/        ChatGPT & Claude account clients, OpenAI-compatible SSE client, prompts, providers, read-aloud
   Capture/   global shortcuts, selection reading (Accessibility + ⌘C fallback),
              floating-button watcher, clipboard watcher, screen OCR
   Store/     settings, Keychain, sessions, history

@@ -34,7 +34,7 @@
   host.id = "screenlocalizer-host";
   host.style.cssText = "all:initial; position:fixed; z-index:2147483647; top:0; left:0; width:0; height:0;";
   const shadow = host.attachShadow({ mode: "closed" });
-  (document.body || document.documentElement).appendChild(host);
+  (document.documentElement || document.body).appendChild(host);
 
   const style = document.createElement("style");
   style.textContent = `
@@ -105,13 +105,20 @@
     }
     .sl-body[dir="rtl"] { text-align: right; }
     .sl-body p { margin: 0 0 8px; }
-    .sl-body ul { margin: 0 0 8px; padding-inline-start: 20px; }
+    .sl-body h4 { font-size: 15px; font-weight: 700; margin: 4px 0 6px; }
+    .sl-body ul, .sl-body ol { margin: 0 0 8px; padding-inline-start: 20px; }
     .sl-body li { margin-bottom: 4px; }
+    .sl-body hr { border: none; border-top: 1px solid #ededf5; margin: 10px 0; }
     .sl-body code {
       background: #f0f1f7; border-radius: 4px; padding: 1px 5px;
       font: 12.5px ui-monospace, "SF Mono", Menlo, monospace;
-      direction: ltr; unicode-bidi: embed;
+      direction: ltr; unicode-bidi: isolate;
     }
+    .sl-body pre {
+      background: #f0f1f7; border-radius: 8px; padding: 8px 10px; margin: 0 0 8px;
+      overflow-x: auto; direction: ltr; unicode-bidi: isolate; text-align: left;
+    }
+    .sl-body pre code { background: none; padding: 0; }
     .sl-loading { display: flex; gap: 5px; padding: 10px 2px; }
     .sl-loading span {
       width: 7px; height: 7px; border-radius: 50%; background: #8b8ff0;
@@ -137,7 +144,8 @@
     @media (prefers-color-scheme: dark) {
       .sl-panel { background: #1d1f2b; color: #e8eaf2; border-color: rgba(255,255,255,.1); }
       .sl-chip { background: #262a3d; border-color: #3a3f58; color: #aeb3f5; }
-      .sl-body code { background: #2a2e42; }
+      .sl-body code, .sl-body pre { background: #2a2e42; }
+      .sl-body hr { border-top-color: #2a2e42; }
       .sl-footer { background: #181a24; border-top-color: #2a2e42; }
       .sl-footbtn { background: #262a3d; border-color: #3a3f58; color: #aeb3f5; }
       .sl-footbtn:hover { background: #303550; }
@@ -161,6 +169,14 @@
   let port = null;
   const cache = new Map(); // mode -> finished text (for current selection)
   let streamBuffer = "";
+  let rafId = null;
+
+  function cancelStreamFrame() {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  }
 
   function getPort() {
     if (port) return port;
@@ -177,33 +193,77 @@
 
   // ---------- minimal markdown rendering ----------
   function escapeHtml(s) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function renderMarkdown(text) {
     const inline = (s) =>
       escapeHtml(s)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
         .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
-        .replace(/`([^`]+)`/g, "<code>$1</code>");
+        .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, "$1<em>$2</em>");
     const lines = text.split("\n");
-    let html = "", listOpen = false, para = [];
+    let html = "", listTag = null, para = [], codeLines = null;
+    const closeList = () => { if (listTag) { html += `</${listTag}>`; listTag = null; } };
     const flushPara = () => {
       if (para.length) { html += `<p>${para.map(inline).join("<br>")}</p>`; para = []; }
     };
-    for (const line of lines) {
-      const m = line.match(/^\s*[-•*]\s+(.*)$/);
-      if (m) {
-        flushPara();
-        if (!listOpen) { html += "<ul>"; listOpen = true; }
-        html += `<li>${inline(m[1])}</li>`;
-      } else {
-        if (listOpen) { html += "</ul>"; listOpen = false; }
-        if (line.trim() === "") flushPara();
-        else para.push(line);
+    for (const raw of lines) {
+      const trimmed = raw.trim();
+      if (trimmed.startsWith("```")) {
+        if (codeLines !== null) {
+          html += `<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`;
+          codeLines = null;
+        } else {
+          flushPara(); closeList();
+          codeLines = [];
+        }
+        continue;
       }
+      if (codeLines !== null) { codeLines.push(raw); continue; }
+      if (/^([-*_])\1{2,}$/.test(trimmed)) { flushPara(); closeList(); html += "<hr>"; continue; }
+      const heading = trimmed.match(/^#{1,6}\s+(.*)$/);
+      if (heading) { flushPara(); closeList(); html += `<h4>${inline(heading[1])}</h4>`; continue; }
+      const bullet = raw.match(/^\s*[-•*]\s+(.*)$/);
+      if (bullet) {
+        flushPara();
+        if (listTag !== "ul") { closeList(); html += "<ul>"; listTag = "ul"; }
+        html += `<li>${inline(bullet[1])}</li>`;
+        continue;
+      }
+      const numbered = raw.match(/^\s*\d{1,3}[.)]\s+(.*)$/);
+      if (numbered) {
+        flushPara();
+        if (listTag !== "ol") { closeList(); html += "<ol>"; listTag = "ol"; }
+        html += `<li>${inline(numbered[1])}</li>`;
+        continue;
+      }
+      closeList();
+      if (trimmed === "") flushPara();
+      else para.push(raw);
     }
-    if (listOpen) html += "</ul>";
+    if (codeLines !== null) html += `<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`;
+    closeList();
     flushPara();
     return html;
+  }
+
+  async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (_) {}
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+    (document.body || document.documentElement).appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove();
+    return ok;
   }
 
   // ---------- floating button ----------
@@ -213,6 +273,8 @@
 
   function showBtn(rect) {
     removeBtn();
+    // Wake the MV3 service worker & warm TLS/HTTP2 while the cursor moves toward the button.
+    try { getPort().postMessage({ type: "warmup" }); } catch (_) {}
     btnEl = document.createElement("button");
     btnEl.className = "sl-btn";
     btnEl.innerHTML = `${LOGO_SVG}<span>ترجم / اشرح</span>`;
@@ -236,6 +298,7 @@
 
   // ---------- panel ----------
   function closePanel() {
+    cancelStreamFrame();
     if (activeRequestId && port) port.postMessage({ type: "abort" });
     activeRequestId = null;
     if (panelEl) { panelEl.remove(); panelEl = null; }
@@ -290,16 +353,19 @@
     panelEl.querySelector('[data-act="settings"]').addEventListener("click", () => {
       chrome.runtime.sendMessage({ type: "open-options" });
     });
-    panelEl.querySelector('[data-act="copy"]').addEventListener("click", (e) => {
+    let copyTimer = null;
+    panelEl.querySelector('[data-act="copy"]').addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
       const out = cache.get(currentMode) || streamBuffer;
       if (!out) return;
-      navigator.clipboard.writeText(out).then(() => {
-        e.target.textContent = "✓ تم النسخ";
-        setTimeout(() => { if (panelEl) e.target.textContent = "📋 نسخ"; }, 1500);
-      });
+      if (await copyText(out)) {
+        btn.textContent = "✓ تم النسخ";
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(() => { if (panelEl) btn.textContent = "📋 نسخ"; }, 1500);
+      }
     });
     panelEl.querySelector('[data-act="retry"]').addEventListener("click", () => {
-      if (currentMode) { cache.delete(currentMode); runMode(currentMode); }
+      if (currentMode) { cache.delete(currentMode); runMode(currentMode, true); }
     });
 
     // drag by header
@@ -336,13 +402,14 @@
     return panelEl ? panelEl.querySelector(".sl-body") : null;
   }
 
-  function runMode(mode) {
+  function runMode(mode, force = false) {
     if (!panelEl) return;
+    cancelStreamFrame();
     currentMode = mode;
     setActiveChip(mode);
     const body = bodyEl();
 
-    if (cache.has(mode)) {
+    if (!force && cache.has(mode)) {
       body.innerHTML = renderMarkdown(cache.get(mode));
       return;
     }
@@ -359,6 +426,7 @@
       text: currentText,
       pageTitle: document.title,
       pageUrl: location.href,
+      force: Boolean(force),
     });
   }
 
@@ -366,28 +434,70 @@
     if (msg.requestId !== activeRequestId || !panelEl) return;
     const body = bodyEl();
     if (msg.type === "delta") {
+      const isFirstChunk = streamBuffer.length === 0;
       streamBuffer += msg.text;
-      body.innerHTML = renderMarkdown(streamBuffer);
-      body.scrollTop = body.scrollHeight;
+      if (isFirstChunk) {
+        // Render the very first delta immediately for minimum perceived TTFT.
+        body.innerHTML = renderMarkdown(streamBuffer);
+        body.scrollTop = body.scrollHeight;
+      } else if (rafId === null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          const b = bodyEl();
+          if (!b) return;
+          b.innerHTML = renderMarkdown(streamBuffer);
+          b.scrollTop = b.scrollHeight;
+        });
+      }
     } else if (msg.type === "done") {
+      cancelStreamFrame();
+      if (body && streamBuffer) {
+        body.innerHTML = renderMarkdown(streamBuffer);
+        body.scrollTop = body.scrollHeight;
+      }
       cache.set(currentMode, streamBuffer);
       activeRequestId = null;
     } else if (msg.type === "error") {
+      cancelStreamFrame();
       body.innerHTML = `<div class="sl-error">${escapeHtml(msg.message)}</div>`;
       activeRequestId = null;
     }
   }
 
   // ---------- selection handling ----------
+  function readCurrentSelection(fallbackPoint) {
+    const active = document.activeElement;
+    if (
+      active &&
+      (active.tagName === "TEXTAREA" || (active.tagName === "INPUT" && active.type !== "password")) &&
+      typeof active.selectionStart === "number" &&
+      active.selectionStart !== active.selectionEnd
+    ) {
+      const text = active.value.slice(active.selectionStart, active.selectionEnd).trim();
+      const box = active.getBoundingClientRect();
+      const rect = fallbackPoint
+        ? { left: fallbackPoint.x, top: fallbackPoint.y - 8, bottom: fallbackPoint.y + 8, width: 1, height: 16 }
+        : box;
+      return { text, rect };
+    }
+    const sel = window.getSelection();
+    const text = sel ? sel.toString().trim() : "";
+    let rect = sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
+    if (rect && rect.width === 0 && rect.height === 0 && fallbackPoint) {
+      rect = { left: fallbackPoint.x, top: fallbackPoint.y - 8, bottom: fallbackPoint.y + 8, width: 1, height: 16 };
+    }
+    return { text, rect };
+  }
+
   document.addEventListener("mouseup", (e) => {
     if (!settings.enabled) return;
     if (e.composedPath().includes(host)) return;
+    const pt = { x: e.clientX, y: e.clientY };
     setTimeout(() => {
-      const sel = window.getSelection();
-      const text = sel ? sel.toString().trim() : "";
-      if (text.length >= 3 && text.length <= MAX_CHARS && sel.rangeCount) {
+      const { text, rect } = readCurrentSelection(pt);
+      if (text.length >= 3 && text.length <= MAX_CHARS && rect) {
         currentText = text;
-        showBtn(sel.getRangeAt(0).getBoundingClientRect());
+        showBtn(rect);
       } else {
         removeBtn();
       }
@@ -409,11 +519,10 @@
   // entry from context menu / keyboard command
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "open-panel") {
-      const sel = window.getSelection();
-      const text = sel ? sel.toString().trim() : currentText;
+      const { text: selected, rect } = readCurrentSelection(null);
+      const text = selected || currentText;
       if (text && text.length <= MAX_CHARS) {
-        const rect = sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
-        openPanel(text, rect);
+        openPanel(text, rect && (rect.width > 0 || rect.height > 0) ? rect : null);
       }
     }
   });

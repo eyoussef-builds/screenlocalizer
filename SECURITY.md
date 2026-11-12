@@ -17,8 +17,12 @@ sharing it publicly. Thank you for keeping ScreenLocalizer users safe!
 
 ## The basics of how ScreenLocalizer handles secrets
 
-- Your API key is stored only on your device: in the browser's local extension storage
-  (extension) or in the macOS Keychain (Mac app). It is sent only to the AI provider you chose.
+- Your API key is stored only on your device: in the browser's device-local extension storage
+  (`chrome.storage.local`) or in the macOS Keychain (Mac app). It is sent only to the AI provider
+  you chose.
+- On the Mac app, **ChatGPT Account** and **Claude Account** sign-in delegate authentication
+  exclusively to OpenAI's official `codex app-server` and Anthropic's official `claude` CLI on your
+  Mac; ScreenLocalizer never reads, copies or stores private OAuth token files.
 - ScreenLocalizer has no server, no account system, and no analytics.
 - The Mac app's test hooks (`App/DebugHooks.swift`) are disabled unless the app is launched with
   `SCREENLOCALIZER_DEBUG=1` in its environment; normal launches never listen for them.
